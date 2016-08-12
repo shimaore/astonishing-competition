@@ -124,6 +124,12 @@ Actions
             @cdr.actual_amount = 0
           true
 
+      stop:
+        name:
+          'fr-FR': '.'
+        action: ->
+          'over'
+
     @rate = {}
     for own k,v of commands
       @rate[k] = v.condition ? v.action
