@@ -13,12 +13,6 @@ Save remotely by default, fallback to
 
 Compute period
 
-    period_for = (side) ->
-      return unless side?
-      side.period = moment
-        .tz side.connect_stamp, side.timezone
-        .format 'YYYY-MM'
-
     @init = ->
 
 * cfg.rating.remote (string,URI,required) base URI for remote invoicing databases
@@ -30,6 +24,12 @@ Compute period
 
       assert @cfg.rating?.local?, 'Missing cfg.rating.local'
       LocalPouchDB = PouchDB.defaults prefix: @cfg.rating.local
+
+      @cfg.period_for ?= (side) ->
+        return unless side?
+        side.period = moment
+          .tz side.connect_stamp, side.timezone
+          .format 'YYYY-MM'
 
     @include = seem ->
 
@@ -67,7 +67,7 @@ We need to figure out:
 We're saving three objects:
 - the entire `@session` object, used for troubleshooting, into the trace_database
 
-        period = period_for rated.client
+        period = @cfg.period_for rated.client
         trace_database = ['trace',client,period].join '-'
         try
           yield safely_write trace_database, @session
@@ -81,7 +81,7 @@ We're saving three objects:
           debug 'safely_write client_database', error.stack ? error
 
         if rated.carrier?
-          period_for rated.carrier
+          @cfg.period_for rated.carrier
           carrier_database = ['rated',carrier,rated.carrier.period].join '-'
           try
             yield safely_write carrier_database, rated.carrier
