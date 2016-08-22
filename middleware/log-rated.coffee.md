@@ -66,6 +66,7 @@ We need to figure out:
 
 We're saving three objects:
 - the entire `@session` object, used for troubleshooting, into the trace_database
+  (this includes the session.data object set in tough-rate and others)
 
         period = @cfg.period_for rated.client
         trace_database = ['trace',client,period].join '-'
