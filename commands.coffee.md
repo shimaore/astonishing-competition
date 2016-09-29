@@ -1,6 +1,11 @@
 Algorithmitic pieces for contract (forfait) definition
 -------------
 
+Note: for now this only handles `rate` (postpaid aggregation after rating).
+The code should also include tools to:
+- do call authorization at start of call (for prepaid and account restrictions on postpaid)
+- do counter updates during the call (for prepaid and account restrictions / fraud detection on postpaid)
+
     {validate} = require 'numbering-plans'
 
     commands =
