@@ -90,13 +90,13 @@ Destination conditions
         name:
           'fr-FR': 'urgences'
         condition: ->
-          @cdr.destination_emergency
+          @cdr.emergency
 
       called_onnet:
         name:
           'fr-FR': 'sur le réseau'
         condition: ->
-          @cdr.destination_onnet
+          @cdr.onnet
 
 Up-to
 -----
