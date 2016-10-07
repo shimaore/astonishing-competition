@@ -16,9 +16,10 @@ Counters
         name:
           'fr-FR': 'destinataires {0} différents'
         action: (counter) ->
-          @counters["_names_#{counter}"] ?= {}
-          @counters["_names_#{counter}"][@cdr.remote_number] = true
-          @counters[counter] = Object.keys(@counters["_names_#{counter}"]).length
+          key = " @@@ #{counter}"
+          @counters[key] ?= {}
+          @counters[key][@cdr.remote_number] = true
+          @counters[counter] = Object.keys(@counters[key]).length
           true
 
 Increment
