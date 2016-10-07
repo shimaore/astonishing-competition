@@ -38,7 +38,7 @@ Increment
 
       increment_duration:
         name:
-          'fr-FR': 'secondes {0}'
+          'fr-FR': "incrémente {0} de la durée de l'appel"
         action: (counter) ->
           @cdr.incremented ?= {}
           @counters[counter] ?= 0
@@ -46,7 +46,6 @@ Increment
             @counters[counter] += @cdr.duration
             @cdr.incremented[counter] = true
           true
-
 
 Counters conditions
 
@@ -123,12 +122,22 @@ Keep the most restrictive (lowest) value
           @cdr.incremented ?= {}
           @counters[counter] ?= 0
           value = @counters[counter]
+
+Do not increment twice the same counter for the same CDR.
+
           unless @cdr.incremented[counter]
             @counters[counter] += @cdr.duration
             @cdr.incremented[counter] = true
+
+Do not apply free-call if the ceiling was already met at the start of the call.
+
           return false if value > total_up_to
+
           up_to = total_up_to - value
           @cdr.up_to ?= up_to
+
+Keep the most restrictive (lowest) value
+
           @cdr.up_to = up_to if @cdr.up_to > up_to
           true
 
