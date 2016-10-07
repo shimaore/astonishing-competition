@@ -46,7 +46,7 @@ The billing rules may modify the working CDR.
           cdr: working_cdr
           counters: counters
 
-        yield run.call ctx, billing_ornaments, commands
+        yield run.call ctx, ornaments, commands
 
         ok = true
         counters._id = 'counters'
