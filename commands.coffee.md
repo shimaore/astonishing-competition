@@ -128,7 +128,7 @@ Keep the most restrictive (lowest) value
             @cdr.incremented[counter] = true
           return false if value > total_up_to
           up_to = total_up_to - value
-          @cdr.up_to ?= value - up_to
+          @cdr.up_to ?= up_to
           @cdr.up_to = up_to if @cdr.up_to > up_to
           true
 
