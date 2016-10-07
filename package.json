@@ -14,6 +14,7 @@
   "dependencies": {
     "bluebird": "^3.4.6",
     "debug": "^2.2.0",
+    "entertaining-crib": "^3.1.0",
     "flat-ornament": "^1.1.0",
     "moment-timezone": "^0.5.5",
     "numbering-plans": "^2.2.0",

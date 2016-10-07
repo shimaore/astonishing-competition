@@ -7,6 +7,7 @@ The code should also include tools to:
 - do counter updates during the call (for prepaid and account restrictions / fraud detection on postpaid)
 
     {validate} = require 'numbering-plans'
+    Rated = require 'entertaining-crib/rated'
 
     commands =
 
@@ -146,7 +147,11 @@ Actions
           'fr-FR': "l'appel est gratuit"
         action: ->
           if @cdr.up_to? and @cdr.duration > @cdr.up_to
-            rated = new Rated @cdr
+            cdr =
+              rating_data: @cdr.rating_data
+              per: @cdr.per
+              divider: @cdr.divider
+            rated = new Rated cdr
             rated.compute @cdr.duration-@cdr.up_to
             @cdr.actual_amount = rated.actual_amount
           else
