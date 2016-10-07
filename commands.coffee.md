@@ -14,7 +14,7 @@ Counters
 
       count_called:
         name:
-          'fr-FR': 'destinataires {0}'
+          'fr-FR': 'destinataires {0} différents'
         action: (counter) ->
           @counters["_names_#{counter}"] ?= {}
           @counters["_names_#{counter}"][@cdr.remote_number] = true
@@ -161,3 +161,7 @@ Actions
     @rate = {}
     for own k,v of commands
       @rate[k] = v.condition ? v.action
+
+    @names = {}
+    for own k,v of commands
+      @names[k] = v.name
