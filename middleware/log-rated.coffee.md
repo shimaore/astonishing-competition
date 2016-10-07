@@ -92,6 +92,9 @@ We're saving three objects:
         yield remote_db
           .put _id:'counters'
           .catch -> yes
+
+  Rate the CDR.
+
         yield aggregate.rate plans_db, billing_db, rated.client
 
         try
@@ -102,7 +105,7 @@ We're saving three objects:
 
         yield billing_db.close()
 
-- a rated `carrier` object, into the rated-database
+- a rated `carrier` object, into the rated-database for the carrier.
 
         if rated.carrier?
           carrier_database = ['rated',carrier,carrier_period].join '-'
@@ -113,6 +116,9 @@ We're saving three objects:
 
 - the entire `@session` object, used for troubleshooting, into the trace-database
   (this includes the session.data object set in tough-rate and others)
+
+  The trace-databases can be deleted after whatever period is convenient in terms
+  of storage space and legal obligations.
 
         trace_database = ['trace',client,client_period].join '-'
         try
