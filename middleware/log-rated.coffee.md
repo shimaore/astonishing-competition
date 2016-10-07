@@ -95,7 +95,8 @@ We're saving three objects:
         yield aggregate.rate plans_db, billing_db, rated.client
 
         try
-          yield @cfg.safely_write client_database, rated.client
+          unless rated.client.hide_call
+            yield @cfg.safely_write client_database, rated.client
         catch error
           debug 'safely_write client_database', error.stack ? error
 

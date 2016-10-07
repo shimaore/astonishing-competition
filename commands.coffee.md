@@ -121,6 +121,13 @@ Keep the most restrictive (lowest) value
 Actions
 -------
 
+      hide_call:
+        name:
+          'fr-FR': "masquer l'appel"
+        action: ->
+          @cdr.hide_call = true
+          true
+
       free:
         name:
           'fr-FR': "l'appel est gratuit"
