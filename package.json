@@ -10,7 +10,6 @@
   },
   "author": "Stéphane Alnet <stephane@shimaore.net> (http://stephane.shimaore.net/)",
   "license": "Unlicense",
-  "private": "WIP",
   "dependencies": {
     "bluebird": "^3.4.6",
     "debug": "^2.2.0",
