@@ -4,7 +4,7 @@
   "description": "CDR aggregation (pre-invoicing) for CCNQ4",
   "main": "index.js",
   "scripts": {
-    "prepublish": "coffee -c middleware/*.coffee.md",
+    "prepublish": "coffee -c -M middleware/*.coffee.md",
     "pretest": "npm install",
     "test": "mocha"
   },
