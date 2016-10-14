@@ -17,21 +17,26 @@ Save remotely by default, fallback to
 
 Compute period
 
-    @init = ->
-      debug 'init'
+    @server_pre = ->
 
 * cfg.rating.remote (string,URI,required) base URI for remote invoicing databases
 
-      assert @cfg.rating?.remote?, 'Missing cfg.rating.remote'
-      RemotePouchDB = PouchDB.defaults prefix: @cfg.rating.remote
+      if @cfg.rating?.remote?
+        RemotePouchDB = PouchDB.defaults prefix: @cfg.rating.remote
+      else
+        debug 'Missing cfg.rating.remote'
 
 * cfg.rating.local (string,path) directory where CDRs are stored if cfg.rating.remote fails. The directory must be present.
 
-      assert @cfg.rating?.local?, 'Missing cfg.rating.local'
-      LocalPouchDB = PouchDB.defaults prefix: @cfg.rating.local
+      if @cfg.rating?.local?
+        LocalPouchDB = PouchDB.defaults prefix: @cfg.rating.local
+      else
+        debug 'Missing cfg.rating.local'
 
-      assert @cfg.rating?.plans?, 'Missing cfg.rating.plans'
-      plans_db = new PouchDB @cfg.rating.plans
+      if @cfg.rating?.plans?
+        plans_db = new PouchDB @cfg.rating.plans
+      else
+        debug 'Missing cfg.rating.plans'
 
       @cfg.period_for ?= (side) ->
         return unless side?
@@ -68,6 +73,8 @@ FIXME upload locally-saved JSON files to remote-db
 
         finally
           remote_db.close()
+
+      null
 
     @include = ->
 
