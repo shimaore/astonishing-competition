@@ -5,6 +5,7 @@
     path = require 'path'
     PouchDB = require 'pouchdb'
     moment = require 'moment-timezone'
+    assert = require 'assert'
 
 Save remotely by default, fallback to
 
