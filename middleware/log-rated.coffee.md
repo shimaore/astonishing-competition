@@ -18,6 +18,7 @@ Save remotely by default, fallback to
 Compute period
 
     @init = ->
+      debug 'init'
 
 * cfg.rating.remote (string,URI,required) base URI for remote invoicing databases
 
@@ -127,4 +128,6 @@ We're saving three objects:
         catch error
           debug 'safely_write trace_database', error.stack ? error
 
-        debug 'rated: Ready'
+        debug 'rated:done'
+
+      debug 'rated:ready'
