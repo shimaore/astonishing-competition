@@ -71,6 +71,12 @@ FIXME upload locally-saved JSON files to remote-db
 
     @include = ->
 
+      unless plans_db and (RemotePouchDB? or LocalPouchDB?)
+        unless @cfg.route_non_billable_calls
+          debug 'Unable to rate'
+          @respond '500 Unable to rate'
+        return
+
       @call.on 'rated', seem (rated) =>
 
         debug 'rated'
@@ -130,4 +136,4 @@ We're saving three objects:
 
         debug 'rated:done'
 
-      debug 'rated:ready'
+      debug 'Ready'
