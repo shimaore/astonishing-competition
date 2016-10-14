@@ -69,7 +69,7 @@ FIXME upload locally-saved JSON files to remote-db
         finally
           remote_db.close()
 
-    @include = seem ->
+    @include = ->
 
       @call.on 'rated', seem (rated) =>
 
