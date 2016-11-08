@@ -19,24 +19,24 @@ Compute period
 
     @server_pre = ->
 
-* cfg.rating.remote (string,URI,required) base URI for remote invoicing databases
+* cfg.aggregation.remote (string,URI,required) base URI for remote invoicing databases
 
-      if @cfg.rating?.remote?
-        RemotePouchDB = PouchDB.defaults prefix: @cfg.rating.remote
+      if @cfg.aggregation?.remote?
+        RemotePouchDB = PouchDB.defaults prefix: @cfg.aggregation.remote
       else
-        debug 'Missing cfg.rating.remote'
+        debug 'Missing cfg.aggregation.remote'
 
-* cfg.rating.local (string,path) directory where CDRs are stored if cfg.rating.remote fails. The directory must be present.
+* cfg.aggregation.local (string,path) directory where CDRs are stored if cfg.aggregation.remote fails. The directory must be present.
 
-      if @cfg.rating?.local?
-        LocalPouchDB = PouchDB.defaults prefix: @cfg.rating.local
+      if @cfg.aggregation?.local?
+        LocalPouchDB = PouchDB.defaults prefix: @cfg.aggregation.local
       else
-        debug 'Missing cfg.rating.local'
+        debug 'Missing cfg.aggregation.local'
 
-      if @cfg.rating?.plans?
-        plans_db = new PouchDB @cfg.rating.plans
+      if @cfg.aggregation?.plans?
+        plans_db = new PouchDB @cfg.aggregation.plans
       else
-        debug 'Missing cfg.rating.plans'
+        debug 'Missing cfg.aggregation.plans'
 
       @cfg.period_for ?= (side) ->
         return unless side?
@@ -64,7 +64,7 @@ FIXME purge local_db so that it doesn't just grow in size indefinitely
 
           catch error
             debug 'save as JSON', database
-            yield fs.writeFileAsync path.join @cfg.rating.local, "#{uuid.v4()}.json", JSON.stringify(data), 'utf-8'
+            yield fs.writeFileAsync path.join @cfg.aggregation.local, "#{uuid.v4()}.json", JSON.stringify(data), 'utf-8'
 
 FIXME upload locally-saved JSON files to remote-db
 
@@ -104,7 +104,7 @@ We're saving three objects:
 
         client_database = ['rated',client,client_period].join '-'
         billing_db = new RemotePouchDB client_database
-        yield remote_db
+        yield billing_db
           .put _id:'counters'
           .catch -> yes
 
