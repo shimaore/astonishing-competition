@@ -13,6 +13,9 @@ Save remotely by default, fallback to
     LocalPouchDB = null
     plans_db = null
 
+    CDR_DB_PREFIX = 'cdr'
+    TRACE_DB_PREFIX = 'trace'
+
     aggregate = require '../aggregation'
 
 Compute period
@@ -102,7 +105,7 @@ We're saving three objects:
 
 - a rated and aggregated `client` object, used for billing, into the rated-database
 
-        client_database = ['rated',client,client_period].join '-'
+        client_database = [CDR_DB_PREFIX,client,client_period].join '-'
         billing_db = new RemotePouchDB client_database
         yield billing_db
           .put _id:'counters'
@@ -123,7 +126,7 @@ We're saving three objects:
 - a rated `carrier` object, into the rated-database for the carrier.
 
         if rated.carrier?
-          carrier_database = ['rated',carrier,carrier_period].join '-'
+          carrier_database = [CDR_DB_PREFIX,carrier,carrier_period].join '-'
           try
             yield @cfg.safely_write carrier_database, rated.carrier
           catch error
@@ -135,7 +138,7 @@ We're saving three objects:
   The trace-databases can be deleted after whatever period is convenient in terms
   of storage space and legal obligations.
 
-        trace_database = ['trace',client,client_period].join '-'
+        trace_database = [TRACE_DB_PREFIX,client,client_period].join '-'
         try
           yield @cfg.safely_write trace_database, @session
         catch error
