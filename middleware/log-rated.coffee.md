@@ -167,6 +167,16 @@ We're saving three objects:
 
         trace_database = [TRACE_DB_PREFIX,client,client_period].join '-'
         try
+
+Compute an ID similar to the one in entertaining-crib/rated,
+except we don't have the same data available.
+
+          @session._id = [
+            @source
+            @session.rated_stamp
+            @destination
+            @session.cdr_report.duration
+          ].join '-'
           yield @cfg.safely_write trace_database, @session
         catch error
           debug 'safely_write trace_database', error.stack ? error

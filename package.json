@@ -10,6 +10,9 @@
   },
   "author": "Stéphane Alnet <stephane@shimaore.net> (http://stephane.shimaore.net/)",
   "license": "Unlicense",
+  "peerDependencies": {
+    "earthy-slave": "^2.1.0"
+  },
   "dependencies": {
     "bluebird": "^3.4.6",
     "debug": "^2.2.0",
