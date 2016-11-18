@@ -50,32 +50,37 @@ Compute period
       @cfg.safely_write = seem (database,data) ->
         data.database = database
 
+        debug 'try remote db', database
+        remote_db = new RemotePouchDB database
+
         try
-          debug 'try remote db', database
-          remote_db = new RemotePouchDB database
           yield remote_db.put data
 
         catch error
+          @cfg.safely_write_local database, data
 
-          try
-            debug 'try local db', database
-            local_db = new LocalPouchDB database
-            yield local_db.put data
+        finally
+          remote_db.close()
+
+      @cfg.safely_write_local = seem (database,data) ->
+
+        debug 'try local db', database
+        local_db = new LocalPouchDB database
+
+        try
+          yield local_db.put data
 
 FIXME sync from local_db to remote_db in the background to ensure our local records eventually make it to the server
 FIXME purge local_db so that it doesn't just grow in size indefinitely
 
-          catch error
-            debug 'save as JSON', database
-            yield fs.writeFileAsync path.join @cfg.aggregation.local, "#{uuid.v4()}.json", JSON.stringify(data), 'utf-8'
+        catch error
+          debug 'save as JSON', database
+          yield fs.writeFileAsync path.join @cfg.aggregation.local, "#{uuid.v4()}.json", JSON.stringify(data), 'utf-8'
 
 FIXME upload locally-saved JSON files to remote-db
 
-          finally
-            local_db.close()
-
         finally
-          remote_db.close()
+          local_db.close()
 
       null
 
