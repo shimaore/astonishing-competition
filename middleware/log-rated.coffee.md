@@ -105,23 +105,23 @@ We're saving three objects:
 
 - a rated and aggregated `client` object, used for billing, into the rated-database
 
-        client_database = [CDR_DB_PREFIX,client,client_period].join '-'
-        billing_db = new RemotePouchDB client_database
-        yield billing_db
-          .put _id:'counters'
-          .catch -> yes
+        if rated.client?
+          client_database = [CDR_DB_PREFIX,client,client_period].join '-'
+          billing_db = new RemotePouchDB client_database
 
-  Rate the CDR.
+          try
+            yield billing_db
+              .put _id:'counters'
+              .catch -> yes
 
-        yield aggregate.rate plans_db, billing_db, rated.client
-
-        try
-          unless rated.client.hide_call
-            yield @cfg.safely_write client_database, rated.client
-        catch error
-          debug 'safely_write client_database', error.stack ? error
-
-        yield billing_db.close()
+            yield aggregate.rate plans_db, billing_db, rated.client
+            unless rated.client.hide_call
+              yield @cfg.safely_write client_database, rated.client
+          catch error
+            debug 'safely_write client_database', error.stack ? error
+          finally
+            yield billing_db.close()
+            billing_db = null
 
 - a rated `carrier` object, into the rated-database for the carrier.
 
