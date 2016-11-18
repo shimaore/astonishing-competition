@@ -18,7 +18,8 @@
     "moment-timezone": "^0.5.6",
     "numbering-plans": "^2.2.0",
     "pouchdb": "^6.0.7",
-    "seem": "^2.0.0"
+    "seem": "^2.0.0",
+    "uuid": "^3.0.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

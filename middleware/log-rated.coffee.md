@@ -6,6 +6,7 @@
     PouchDB = require 'pouchdb'
     moment = require 'moment-timezone'
     assert = require 'assert'
+    uuid = require 'uuid'
 
 Save remotely by default, fallback to
 
