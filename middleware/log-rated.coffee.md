@@ -47,8 +47,14 @@ Compute period
           .tz side.connect_stamp, side.timezone
           .format 'YYYY-MM'
 
+Safely-write
+------------
+
+Try remote database, local database, and local file.
+
       @cfg.safely_write = seem (database,data) ->
         data.database = database
+        return unless RemotePouchDB?
 
         debug 'try remote db', database
         remote_db = new RemotePouchDB database
@@ -57,12 +63,17 @@ Compute period
           yield remote_db.put data
 
         catch error
-          @cfg.safely_write_local database, data
+          safely_write_local database, data
 
         finally
           remote_db.close()
 
-      @cfg.safely_write_local = seem (database,data) ->
+Safely-write, local database
+----------------------------
+
+      safely_write_local = seem (database,data) ->
+        data.database = database
+        return unless LocalPouchDB?
 
         debug 'try local db', database
         local_db = new LocalPouchDB database
@@ -74,13 +85,23 @@ FIXME sync from local_db to remote_db in the background to ensure our local reco
 FIXME purge local_db so that it doesn't just grow in size indefinitely
 
         catch error
-          debug 'save as JSON', database
-          yield fs.writeFileAsync path.join @cfg.aggregation.local, "#{uuid.v4()}.json", JSON.stringify(data), 'utf-8'
+          safely_write_file database, data
 
 FIXME upload locally-saved JSON files to remote-db
 
         finally
           local_db.close()
+
+Safely-write, local file
+------------------------
+
+      safely_write_file = seem (database,data) =>
+        data.database = database
+        return unless @cfg.aggregation?.local?
+
+        filename = path.join @cfg.aggregation.local, "#{uuid.v4()}.json"
+        debug 'save as JSON', filename
+        yield fs.writeFileAsync filename, JSON.stringify(data), 'utf-8'
 
       null
 
