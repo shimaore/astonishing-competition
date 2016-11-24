@@ -183,7 +183,11 @@ except we don't have the same data available.
             @destination
             @session.cdr_report.duration
           ].join '-'
-          yield @cfg.safely_write trace_database, @session
+
+          trace_data = {}
+          for own k,v of @session when typeof v isnt 'function'
+            trace_data[k] = v
+          yield @cfg.safely_write trace_database, trace_data
         catch error
           debug 'safely_write trace_database', error.stack ? error
 
