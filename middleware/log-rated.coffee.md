@@ -122,8 +122,8 @@ We need to figure out:
 - where we want to log: which databases (one for client side, one for carrier side)
 - how we want to log it: what document identifier
 
-        client = rated.client?.account ? 'unknown'
-        carrier = rated.carrier?.carrier ? 'unknown'
+        client = rated.params.client?.account ? 'unknown-client'
+        carrier = rated.params.carrier?.carrier ? 'unknown-carrier'
 
         client_period = @cfg.period_for rated.client
         carrier_period = @cfg.period_for rated.carrier
@@ -173,7 +173,7 @@ except we don't have the same data available.
 
           @session._id = [
             @source
-            @session.rated_stamp
+            @session.rated.params.stamp
             @destination
             @session.cdr_report.duration
           ].join '-'
