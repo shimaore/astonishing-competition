@@ -14,9 +14,6 @@ Save remotely by default, fallback to
     LocalPouchDB = null
     plans_db = null
 
-    CDR_DB_PREFIX = 'cdr'
-    TRACE_DB_PREFIX = 'trace'
-
     aggregate = require '../aggregation'
 
 Compute period
@@ -50,6 +47,15 @@ Compute period
         moment
         .tz stamp, timezone
         .format 'YYYY-MM'
+
+      @cfg.rated_client ?= (rated) ->
+        rated.params.client?.account ? 'unknown-client'
+
+      @cfg.rated_carrier ?= (rated) ->
+        rated.params.carrier?.carrier ? 'unknown-carrier'
+
+      @cfg.CDR_DB_PREFIX ?= 'cdr'
+      @cfg.TRACE_DB_PREFIX ?= 'trace'
 
 Safely-write
 ------------
@@ -125,8 +131,8 @@ We need to figure out:
 - where we want to log: which databases (one for client side, one for carrier side)
 - how we want to log it: what document identifier
 
-        client = rated.params.client?.account ? 'unknown-client'
-        carrier = rated.params.carrier?.carrier ? 'unknown-carrier'
+        client = @cfg.rated_client client
+        carrier = @cfg.rated_carrier rated
 
         client_period = @cfg.period_for rated.client
         carrier_period = @cfg.period_for rated.carrier
@@ -136,7 +142,7 @@ We're saving three objects:
 - a rated and aggregated `client` object, used for billing, into the rated-database
 
         if rated.client?
-          client_database = [CDR_DB_PREFIX,client,client_period].join '-'
+          client_database = [@cfg.CDR_DB_PREFIX,client,client_period].join '-'
           billing_db = new RemotePouchDB client_database
 
           try
@@ -156,7 +162,7 @@ We're saving three objects:
 - a rated `carrier` object, into the rated-database for the carrier.
 
         if rated.carrier?
-          carrier_database = [CDR_DB_PREFIX,carrier,carrier_period].join '-'
+          carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
           try
             yield @cfg.safely_write carrier_database, rated.carrier
           catch error
@@ -171,7 +177,7 @@ We're saving three objects:
         trace_period = client_period
         trace_period ?= @cfg.period_of rated.params.stamp, rated.params.client?.timezone
 
-        trace_database = [TRACE_DB_PREFIX,client,trace_period].join '-'
+        trace_database = [@cfg.TRACE_DB_PREFIX,client,trace_period].join '-'
         try
 
 Compute an ID similar to the one in entertaining-crib/rated,
