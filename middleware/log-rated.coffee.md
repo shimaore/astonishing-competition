@@ -42,11 +42,14 @@ Compute period
       else
         debug 'Missing cfg.aggregation.plans'
 
-      @cfg.period_for ?= (side) ->
+      @cfg.period_for ?= (side) =>
         return unless side?
-        side.period = moment
-          .tz side.connect_stamp, side.timezone
-          .format 'YYYY-MM'
+        side.period = @cfg.period_of side.connect_stamp, side.timezone
+
+      @cfg.period_of ?= (stamp,timezone = 'UTC') ->
+        moment
+        .tz stamp, timezone
+        .format 'YYYY-MM'
 
 Safely-write
 ------------
@@ -165,7 +168,10 @@ We're saving three objects:
   The trace-databases can be deleted after whatever period is convenient in terms
   of storage space and legal obligations.
 
-        trace_database = [TRACE_DB_PREFIX,client,client_period].join '-'
+        trace_period = client_period
+        trace_period ?= @cfg.period_of rated.params.stamp, rated.params.client?.timezone
+
+        trace_database = [TRACE_DB_PREFIX,client,trace_period].join '-'
         try
 
 Compute an ID similar to the one in entertaining-crib/rated,
