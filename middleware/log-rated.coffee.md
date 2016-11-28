@@ -131,7 +131,7 @@ We need to figure out:
 - where we want to log: which databases (one for client side, one for carrier side)
 - how we want to log it: what document identifier
 
-        client = @cfg.rated_client client
+        client = @cfg.rated_client rated
         carrier = @cfg.rated_carrier rated
 
         client_period = @cfg.period_for rated.client
