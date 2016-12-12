@@ -22,6 +22,7 @@
     "numbering-plans": "^2.3.0",
     "pouchdb": "^6.0.7",
     "seem": "^2.0.0",
+    "shimaore-pouchdb": "^6.1.0-prerelease",
     "uuid": "^3.0.1"
   },
   "devDependencies": {

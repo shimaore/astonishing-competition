@@ -3,7 +3,7 @@
     seem = require 'seem'
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
-    PouchDB = require 'pouchdb'
+    PouchDB = require 'shimaore-pouchdb'
     moment = require 'moment-timezone'
     assert = require 'assert'
     uuid = require 'uuid'
