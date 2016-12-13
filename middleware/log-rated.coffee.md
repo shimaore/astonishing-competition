@@ -75,8 +75,13 @@ Try remote database, local database, and local file.
         catch error
           safely_write_local database, data
 
-        finally
-          remote_db.close()
+        yield remote_db
+          .close()
+          .catch (error) ->
+            debug "remote db close #{error.stack ? error}"
+            null
+
+        remote_db = null
 
 Safely-write, local database
 ----------------------------
@@ -99,8 +104,13 @@ FIXME purge local_db so that it doesn't just grow in size indefinitely
 
 FIXME upload locally-saved JSON files to remote-db
 
-        finally
-          local_db.close()
+        yield local_db
+          .close()
+          .catch (error) ->
+            debug "local db close: #{error.stack ? error}"
+            null
+
+        local_db = null
 
 Safely-write, local file
 ------------------------
@@ -155,9 +165,14 @@ We're saving three objects:
               yield @cfg.safely_write client_database, rated.client
           catch error
             debug 'safely_write client_database', error.stack ? error
-          finally
-            yield billing_db.close()
-            billing_db = null
+
+          yield billing_db
+            .close()
+            .catch (error) ->
+              debug "billing db close: #{error.stack ? error}"
+              null
+
+          billing_db = null
 
 - a rated `carrier` object, into the rated-database for the carrier.
 
