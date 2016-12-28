@@ -235,16 +235,27 @@ Counters at the sub-account level.
               .put _id: counters_id
               .catch -> yes
 
-            yield aggregate.rate plans_db, period_db, counters_id, rated.client
+            yield cdr = aggregate.rate plans_db, period_db, counters_id, rated.client
 
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
             unless rated.client.hide_call
 
-Both databases contain the exact same CDRs
+              yield @cfg.safely_write period_database, cdr
 
-              yield @cfg.safely_write period_database, rated.client
-              yield @cfg.safely_write account_database, rated.client
+              public_cdr =
+                _id: cdr._id
+                direction: cdr.direction
+                to: cdr.to
+                from: cdr.from
+                stamp: cdr.stamp
+                timezone: cdr.timezone
+                destination: cdr.destination
+                duration: cdr.duration
+                currency: cdr.currency
+                actual_amount: cdr.actual_amount
+
+              yield @cfg.safely_write account_database, public_cdr
 
           catch error
             debug "safely_write client: #{error.stack ? error}", period_database, account_database,
