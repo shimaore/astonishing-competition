@@ -237,9 +237,17 @@ Counters at the sub-account level.
 
             cdr = yield aggregate.rate plans_db, period_db, counters_id, rated.client
 
+            unless cdr?
+              debug 'CDR could not be processed.'
+
+FIXME: cuddly
+
+              cdr = rated.client
+              cdr.unprocessed = true
+
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
-            unless rated.client.hide_call
+            unless cdr.hide_call
 
               yield @cfg.safely_write period_database, cdr
 
