@@ -84,7 +84,7 @@ Compute period
           else
             'unknown-client'
 
-* cfg.rated_account (function) computes a carrier unique identifier based on a rated CDR. Default: use rated.params.carrier.carrier.
+* cfg.rated_carrier (function) computes a carrier unique identifier based on a rated CDR. Default: use rated.params.carrier.carrier.
 
       @cfg.rated_carrier ?= (rated) ->
         rated.params.carrier?.carrier ? 'unknown-carrier'
@@ -247,7 +247,7 @@ Both databases contain the exact same CDRs
               yield @cfg.safely_write account_database, rated.client
 
           catch error
-            debug "safely_write client: #{error.stack ? error}", client_database, account_database,
+            debug "safely_write client: #{error.stack ? error}", period_database, account_database,
 
           yield period_db
             .close()
