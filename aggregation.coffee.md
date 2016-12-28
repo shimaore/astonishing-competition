@@ -14,7 +14,7 @@ Restrictions and constraints are stored alongside the billable CDRs in a `counte
       new Promise (accept,reject) ->
         setTimeout accept, t
 
-    aggregate = seem (plans_db,billing_db,commands,cdr) ->
+    aggregate = seem (plans_db,counters_db,counters_id,commands,cdr) ->
 
 * doc.src_endpoint.rating[start-date].plan the name of the billing plan
 * doc.plan Description of a billing plan.
@@ -33,7 +33,7 @@ It's very important that the billing-db be created with a `counters` record.
 
       ok = false
       while not ok
-        counters = yield billing_db.get 'counters'
+        counters = yield counters_db.get counters_id
 
 The billing rules may modify the working CDR.
 
@@ -49,9 +49,9 @@ The billing rules may modify the working CDR.
         yield run.call ctx, ornaments, commands
 
         ok = true
-        counters._id = 'counters'
+        counters._id = counters_id
         counters.last = cdr._id
-        yield billing_db
+        yield counters_db
           .put counters
           .catch ->
 
@@ -68,4 +68,4 @@ But the billing rules may not modify values in the original, rated CDR.
       cdr
 
     {rate} = require './commands'
-    @rate = (plans_db,billing_db,cdr) -> aggregate plans_db, billing_db, rate, cdr
+    @rate = (plans_db,counters_db,cdr) -> aggregate plans_db, counters_db, rate, cdr
