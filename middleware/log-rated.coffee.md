@@ -235,7 +235,7 @@ Counters at the sub-account level.
               .put _id: counters_id
               .catch -> yes
 
-            yield cdr = aggregate.rate plans_db, period_db, counters_id, rated.client
+            cdr = yield aggregate.rate plans_db, period_db, counters_id, rated.client
 
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
