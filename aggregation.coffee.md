@@ -68,4 +68,4 @@ But the billing rules may not modify values in the original, rated CDR.
       cdr
 
     {rate} = require './commands'
-    @rate = (plans_db,counters_db,cdr) -> aggregate plans_db, counters_db, rate, cdr
+    @rate = (plans_db,counters_db,counters_id,cdr) -> aggregate plans_db, counters_db, counters_id, rate, cdr
