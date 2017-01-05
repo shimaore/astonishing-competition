@@ -108,7 +108,7 @@ Try remote database, local database, and local file.
         data.database = database
         return unless RemotePouchDB?
 
-        debug 'try remote db', database
+        debug 'try remote db', database, data._id
         remote_db = new RemotePouchDB database
 
         try
