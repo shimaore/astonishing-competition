@@ -16,14 +16,14 @@
   },
   "dependencies": {
     "bluebird": "^3.4.7",
-    "debug": "^2.5.2",
+    "debug": "^2.6.0",
     "entertaining-crib": "^3.2.2",
     "flat-ornament": "^1.1.0",
     "moment-timezone": "^0.5.11",
     "numbering-plans": "^2.3.2",
-    "pouchdb": "^6.1.0",
+    "pouchdb": "^6.1.1",
     "seem": "^2.0.0",
-    "shimaore-pouchdb": "^6.1.0",
+    "shimaore-pouchdb": "^6.1.1",
     "uuid": "^3.0.1"
   },
   "devDependencies": {
