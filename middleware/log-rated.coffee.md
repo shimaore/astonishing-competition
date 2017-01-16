@@ -239,6 +239,8 @@ Counters at the sub-account level.
 
             cdr = yield aggregate.rate plans_db, period_db, counters_id, rated.client
 
+            cdr.trace_id = @session._id
+
             if cdr?
               cdr.processed = true
             else
@@ -287,9 +289,14 @@ Carrier object
 A rated `carrier` object, saved into the rated-database for the carrier.
 
         if rated.carrier?
+
           carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
+
+          cdr = rated.carrier
+          cdr.trace_id = @session._id
+
           try
-            yield @cfg.safely_write carrier_database, rated.carrier
+            yield @cfg.safely_write carrier_database, cdr
           catch error
             debug "safely_write carrier: #{error.stack ? error}", carrier_database
 
