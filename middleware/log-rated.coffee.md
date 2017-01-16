@@ -305,20 +305,6 @@ The entire `@session` object, used for troubleshooting, saved into the trace-dat
         trace_database = [@cfg.TRACE_DB_PREFIX,trace_period].join '-'
         try
 
-          id = @_in()[0]
-          id ?= @source
-
-Compute an ID similar to the one in entertaining-crib/rated,
-except we don't have the same data available.
-
-          @session._id = [
-            id
-            @session.rated.params.stamp
-            @source
-            @destination
-            @session.cdr_report.duration
-          ].join '-'
-
           trace_data = {}
           for own k,v of @session when typeof v isnt 'function'
             trace_data[k] = v

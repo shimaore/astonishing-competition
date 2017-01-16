@@ -11,7 +11,8 @@
   "author": "Stéphane Alnet <stephane@shimaore.net> (http://stephane.shimaore.net/)",
   "license": "Unlicense",
   "peerDependencies": {
-    "earthy-slave": "^3.0.1"
+    "earthy-slave": "^3.0.1",
+    "huge-play": "^16"
   },
   "dependencies": {
     "bluebird": "^3.4.7",
