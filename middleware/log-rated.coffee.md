@@ -303,22 +303,7 @@ A rated `carrier` object, saved into the rated-database for the carrier.
 Trace object
 ------------
 
-The entire `@session` object, used for troubleshooting, saved into the trace-database
-(this includes the session.data object set in tough-rate and others)
-
-        trace_period = client_period
-        trace_period ?= @cfg.period_of rated.params.stamp, rated.params.client?.timezone
-
-        trace_database = [@cfg.TRACE_DB_PREFIX,trace_period].join '-'
-        try
-
-          trace_data = {}
-          for own k,v of @session when typeof v isnt 'function'
-            trace_data[k] = v
-          yield @cfg.safely_write trace_database, trace_data
-        catch error
-          debug 'safely_write trace', trace_database, error.stack ? error
-
+        yield @save_trace()
         debug 'rated:done'
 
       debug 'Ready'
