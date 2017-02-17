@@ -91,13 +91,13 @@ Destination conditions
         name:
           'fr-FR': 'urgences'
         condition: ->
-          @cdr.emergency
+          if @cdr.emergency then true else false
 
       called_onnet:
         name:
           'fr-FR': 'sur le réseau'
         condition: ->
-          @cdr.onnet
+          if @cdr.onnet then true else false
 
 Up-to
 -----
