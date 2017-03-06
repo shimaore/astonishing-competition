@@ -12,9 +12,7 @@ Restrictions and constraints are stored alongside the billable CDRs in a `counte
 
     {rate} = require './commands'
 
-    sleep = (t) ->
-      new Promise (accept,reject) ->
-        setTimeout accept, t
+    sleep = require 'marked-summer/sleep'
 
     class Aggregator
       constructor: (@plans_db,@counters_db,@counters_id,@cdr,@commands = rate) ->
@@ -37,7 +35,7 @@ The billing rules may modify the working CDR, but not the original cdr.
           @working_cdr[k] = v
 
         unless @ornaments?
-          doc = yield plans_db
+          doc = yield @plans_db
             .get "plan:#{cdr.rating.plan}"
             .catch -> null
 
@@ -76,3 +74,5 @@ But the billing rules may not modify values in the original, rated CDR.
           cdr[k] = v
         cdr.counters = counters
         cdr
+
+    module.exports = Aggregator

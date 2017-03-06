@@ -14,9 +14,9 @@ Save remotely by default, fallback to
     LocalPouchDB = null
     plans_db = null
 
-    aggregate = require '../aggregation'
+    Aggregator = require '../aggregation'
     run = require 'flat-ornament'
-    {conditions} = require 'astonishing-competitions/commands'
+    {conditions} = require '../commands'
     sleep = require 'marked-summer/sleep'
 
     seconds = 1000
@@ -109,7 +109,7 @@ Try remote database, local database, and local file.
 
 * cfg.safely_write (function) save data in a database, try remote database, local database, and local file.
 
-      @cfg.safely_write = seem (database,data) ->
+      @cfg.safely_write ?= seem (database,data) ->
         data.database = database
         return unless RemotePouchDB?
 
@@ -177,15 +177,15 @@ Call handler
 
     @include = seem ->
 
+      @debug 'Start'
+
 Prevent calls from going through if we won't be able to rate / save them.
 
       unless plans_db and (RemotePouchDB? or LocalPouchDB?)
         unless @cfg.route_non_billable_calls
-          @debug 'Unable to rate'
+          @debug 'Unable to rate, no plans_db or Remote/Local PouchDB'
           @respond '500 Unable to rate'
         return
-
-      debug 'rated'
 
       unless @session.rated?
         @debug 'No session.rated'
@@ -224,13 +224,13 @@ Period-database: (monthly) database used to globally generate invoices. Contains
         period_database = [@cfg.CDR_DB_PREFIX,client_period].join '-'
         period_db = new RemotePouchDB period_database
 
-        yield period_db
-          .put _id: counters_id
-          .catch -> yes
-
 Counters at the sub-account level.
 
         counters_id = ['counters',sub_account,client_period].join '-'
+
+        yield period_db
+          .put _id: counters_id
+          .catch -> yes
 
         client_aggregator = new Aggregator plans_db, period_db, counters_id, @session.rated.client
 
@@ -239,7 +239,7 @@ Rating ornament
 
 * doc.endpoint.rating_ornaments (ornaments) used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
 
-      ornaments = @session.params.client?.rating_ornaments?
+      ornaments = @session.rated.params.client?.rating_ornaments?
       if ornaments
         if not client_aggregator?
           yield @respond '500 no aggregator available'
@@ -343,7 +343,7 @@ Do not store CDRs for calls that must be hidden (e.g. emergency calls in most ju
               yield @cfg.safely_write period_database, cdr
 
           catch error
-            debug "safely_write client: #{error.stack ? error}", period_database, account_database,
+            debug "safely_write client: #{error.stack ? error}", period_database
 
           yield period_db
             .close()
