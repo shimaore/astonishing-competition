@@ -10,62 +10,69 @@ Restrictions and constraints are stored alongside the billable CDRs in a `counte
     seem = require 'seem'
     run = require 'flat-ornament'
 
+    {rate} = require './commands'
+
     sleep = (t) ->
       new Promise (accept,reject) ->
         setTimeout accept, t
 
-    aggregate = seem (plans_db,counters_db,counters_id,commands,cdr) ->
+    class Aggregator
+      constructor: (@plans_db,@counters_db,@counters_id,@cdr,@commands = rate) ->
+        @working_cdr = {}
 
 * doc.src_endpoint.rating[start-date].plan the name of the billing plan
 * doc.plan Description of a billing plan.
 * doc.plan.ornaments The [`flat-ornaments`](#pkg.flat-ornaments) implementation of the billing plan, using the commands described in the [`astonishing-competition`](#pkg.astonishing-competition) package.
 
-      doc = yield plans_db
-        .get "plan:#{cdr.rating.plan}"
-        .catch -> null
+      handle: seem (duration) ->
 
-      unless doc?
-        return null
+For each step we compute the new values at the point-in-time specified.
 
-      {ornaments} = doc
+        @cdr.compute duration
+        cdr = @cdr.toJSON()
+
+The billing rules may modify the working CDR, but not the original cdr.
+
+        for own k,v of cdr when k[0] isnt '_'
+          @working_cdr[k] = v
+
+        unless @ornaments?
+          doc = yield plans_db
+            .get "plan:#{cdr.rating.plan}"
+            .catch -> null
+
+          unless doc?
+            return null
+
+          {@ornaments} = doc
 
 It's very important that the billing-db be created with a `counters` record.
 
-      ok = false
-      while not ok
-        counters = yield counters_db.get counters_id
+        ok = false
+        while not ok
+          counters = yield counters_db.get counters_id
 
-The billing rules may modify the working CDR.
+          ctx =
+            cdr: working_cdr
+            counters: counters
 
-        working_cdr = {}
-        for own k,v of cdr when k[0] isnt '_'
-          working_cdr[k] = v
-        working_cdr._complete = false
+          yield run.call ctx, @ornaments, @commands
 
-        ctx =
-          cdr: working_cdr
-          counters: counters
-
-        yield run.call ctx, ornaments, commands
-
-        ok = true
-        counters._id = counters_id
-        counters.last = cdr._id
-        yield counters_db
-          .put counters
-          .catch ->
+          ok = true
+          counters._id = counters_id
+          counters.last = cdr._id
+          yield counters_db
+            .put counters
+            .catch ->
 
 If the counters were modified while we were computing, do another loop.
 
-            ok = false
-            yield sleep Math.random 50
+              ok = false
+              yield sleep Math.random 50
 
 But the billing rules may not modify values in the original, rated CDR.
 
-      for own k,v of working_cdr when k[0] isnt '_'
-        cdr[k] = v
-      cdr.counters = counters
-      cdr
-
-    {rate} = require './commands'
-    @rate = (plans_db,counters_db,counters_id,cdr) -> aggregate plans_db, counters_db, counters_id, rate, cdr
+        for own k,v of working_cdr when k[0] isnt '_'
+          cdr[k] = v
+        cdr.counters = counters
+        cdr

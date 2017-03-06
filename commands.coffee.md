@@ -1,6 +1,10 @@
 Algorithmitic pieces for contract (forfait) definition
 -------------
 
+This code handles three stages in the call:
+- `pre` (decides whether the call can be placed or not)
+- `middle` (decides whether the call can continue or not)
+- `rate`
 Note: for now this only handles `rate` (postpaid aggregation after rating).
 The code should also include tools to:
 - do call authorization at start of call (for prepaid and account restrictions on postpaid)
@@ -23,7 +27,7 @@ Counters
           @counters[counter] = Object.keys(@counters[key]).length
           true
 
-Increment
+Increment a counter for this call (once)
 
       increment:
         name:
@@ -36,15 +40,18 @@ Increment
             @cdr.incremented[counter] = true
           true
 
+Increment a counter with this call duration (once)
+
       increment_duration:
         name:
           'fr-FR': "incrémente {0} de la durée de l'appel"
         action: (counter) ->
           @cdr.incremented ?= {}
           @counters[counter] ?= 0
-          unless @cdr.incremented[counter]
-            @counters[counter] += @cdr.duration
-            @cdr.incremented[counter] = true
+          @cdr.incremented[counter] ?= 0
+          if @cdr.duration > @cdr.incremented[counter]
+            @counters[counter] += @cdr.duration - @cdr.incremented[counter]
+          @cdr.incremented[counter] = @cdr.duration
           true
 
 Counters conditions
@@ -119,15 +126,9 @@ Keep the most restrictive (lowest) value
         name:
           'fr-FR': "jusqu'à {0} secondes {1} mensuelles"
         condition: (total_up_to,counter) ->
-          @cdr.incremented ?= {}
-          @counters[counter] ?= 0
           value = @counters[counter]
 
-Do not increment twice the same counter for the same CDR.
-
-          unless @cdr.incremented[counter]
-            @counters[counter] += @cdr.duration
-            @cdr.incremented[counter] = true
+          commands.increment_duration.action.call this, counter
 
 Do not apply free-call if the ceiling was already met at the start of the call.
 
@@ -180,3 +181,18 @@ Actions
     @names = {}
     for own k,v of commands
       @names[k] = v.name
+
+Used by astonishing-competition for start-of-call and mid-call conditions.
+
+    @conditions = {}
+    for own k,v of commands when v.condition?
+      @conditions[k] = v.condition
+    @conditions.up_to = (total_up_to,counter) ->
+      return @counters[counter] < total_up_to
+    @conditions.free = ->
+      return @cdr.actual_amount is 0
+    @conditions.stop = commands.stop.action
+    @conditions.hangup = ->
+      @call.action 'hangup'
+      @direction 'rejected'
+      'over'
