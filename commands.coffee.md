@@ -127,6 +127,12 @@ Destination conditions
 Up-to
 -----
 
+      reset_up_to:
+        name:
+          'fr-FR': 'Indépendamment, '
+        action: ->
+          @cdr.up_to = null
+
 Indicates what part of the call might be free.
 
       per_call_up_to:
