@@ -106,6 +106,24 @@ Destination conditions
         condition: ->
           if @cdr.onnet then true else false
 
+      atmost_duration:
+        name:
+          'fr-FR': "Si l'appel dure moins de {0} secondes"
+        condition: (maximum)->
+          @cdr.duration < maximum
+
+      is_free:
+        name:
+          'fr-FR': "Si l'appel est gratuit"
+        condition: ->
+          @cdr.actual_amount is 0
+
+      atmost_amount:
+        name:
+          'fr-FR': "Si l'appel coûte moins de {0}"
+        condition: (maximum)->
+          @cdr.actual_amount < maximum
+
 Up-to
 -----
 
@@ -125,7 +143,7 @@ Keep the most restrictive (lowest) value
       up_to:
         name:
           'fr-FR': "jusqu'à {0} secondes {1} mensuelles"
-        condition: (total_up_to,counter) ->
+        action: (total_up_to,counter) ->
           value = @counters[counter]
 
           commands.increment_duration.action.call this, counter
@@ -151,6 +169,8 @@ Actions
         action: ->
           @cdr.hide_call = true
           true
+
+The actual semantics here are "call is free _up-to_ {the values specified previously in up-to or per-call-up-to}".
 
       free:
         name:
@@ -182,15 +202,11 @@ Actions
     for own k,v of commands
       @names[k] = v.name
 
-Used by astonishing-competition for start-of-call and mid-call conditions.
+Used for start-of-call and mid-call conditions.
 
     @conditions = {}
     for own k,v of commands when v.condition?
       @conditions[k] = v.condition
-    @conditions.up_to = (total_up_to,counter) ->
-      return @counters[counter] < total_up_to
-    @conditions.free = ->
-      return @cdr.actual_amount is 0
     @conditions.stop = commands.stop.action
     @conditions.hangup = ->
       @call.action 'hangup'
