@@ -1,6 +1,6 @@
 {
   "name": "astonishing-competition",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "CDR rating and aggregation (pre-invoicing) for CCNQ4",
   "main": "index.js",
   "scripts": {
