@@ -60,7 +60,8 @@ Counters conditions
         name:
           'fr-FR': 'au plus {0} {1}'
         condition: (maximum,counter) ->
-          @counters[counter] <= maximum
+          value = @counters[counter] ? 0
+          value <= maximum
 
 Destination conditions
 
@@ -154,7 +155,7 @@ Still marking it as an action so that it does not show up in the exported condit
         name:
           'fr-FR': "jusqu'à {0} secondes {1} mensuelles"
         action: (total_up_to,counter) ->
-          value = @counters[counter]
+          value = @counters[counter] ? 0
 
           commands.increment_duration.action.call this, counter
 
