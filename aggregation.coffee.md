@@ -9,6 +9,7 @@ Restrictions and constraints are stored alongside the billable CDRs in a `counte
 
     seem = require 'seem'
     run = require 'flat-ornament'
+    Rated = require 'entertaining-crib/rated'
 
     {rate} = require './commands'
 
@@ -24,12 +25,16 @@ Restrictions and constraints are stored alongside the billable CDRs in a `counte
 
       handle: seem (duration) ->
 
-For each step we compute the new values at the point-in-time specified.
+For each step we compute the new values at the specified point-in-time.
+Note: we must build a new `Rated` object since its duration can only be set once.
 
-        @cdr.compute duration
-        cdr = @cdr.toJSON()
+        cdr = new Rated @cdr
+          .compute duration
+          .toJSON()
 
 The billing rules may modify the working CDR, but not the original cdr.
+This is done so that, when generating aggregated CDRs from rated CDRs, the `_id` and `_rev` fields esp. are not modified accidentally.
+But, conversely, in a prepaid situation, the code running multiple times for the same call could store intermediary values (using a `_` prefix) in the working-CDR.
 
         for own k,v of cdr when k[0] isnt '_'
           @working_cdr[k] = v
@@ -51,7 +56,7 @@ It's very important that the billing-db be created with a `counters` record.
           counters = yield counters_db.get counters_id
 
           ctx =
-            cdr: working_cdr
+            cdr: @working_cdr
             counters: counters
 
           yield run.call ctx, @ornaments, @commands
@@ -68,9 +73,10 @@ If the counters were modified while we were computing, do another loop.
               ok = false
               yield sleep Math.random 50
 
-But the billing rules may not modify values in the original, rated CDR.
+The billing rules may not modify values in the original, rated CDR,
+nor the copy we send back.
 
-        for own k,v of working_cdr when k[0] isnt '_'
+        for own k,v of @working_cdr when k[0] isnt '_'
           cdr[k] = v
         cdr.counters = counters
         cdr
