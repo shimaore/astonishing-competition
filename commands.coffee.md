@@ -147,6 +147,9 @@ Keep the most restrictive (lowest) value
           @cdr.up_to = up_to if @cdr.up_to > up_to
           true
 
+The `up_to` command is both an action (it modifies the CDR) and a condition (it does not always return true).
+Still marking it as an action so that it does not show up in the exported conditions.
+
       up_to:
         name:
           'fr-FR': "jusqu'à {0} secondes {1} mensuelles"
