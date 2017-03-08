@@ -53,7 +53,7 @@ It's very important that the billing-db be created with a `counters` record.
 
         ok = false
         while not ok
-          counters = yield counters_db.get counters_id
+          counters = yield @counters_db.get @counters_id
 
           ctx =
             cdr: @working_cdr
@@ -62,9 +62,9 @@ It's very important that the billing-db be created with a `counters` record.
           yield run.call ctx, @ornaments, @commands
 
           ok = true
-          counters._id = counters_id
+          counters._id = @counters_id
           counters.last = cdr._id
-          yield counters_db
+          yield @counters_db
             .put counters
             .catch ->
 
