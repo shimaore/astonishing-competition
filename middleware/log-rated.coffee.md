@@ -18,6 +18,10 @@ Save remotely by default, fallback to
     run = require 'flat-ornament'
     {conditions} = require '../commands'
     sleep = require 'marked-summer/sleep'
+    sleep_until = (time) ->
+      now = new Date()
+      if time > now
+        sleep time-now
 
     seconds = 1000
 
@@ -290,6 +294,7 @@ Then, once the call is anwered:
         .then =>
           @debug 'CHANNEL_ANSWER'
           running = true
+          start_time = new Date()
 
 - Execute the script a second time at the time the call is actually answered (things might have changed while the call was making progress and/or being routed).
 
@@ -297,7 +302,7 @@ Then, once the call is anwered:
 
 - After that, do a first check at the end of the initial-duration, then once for every interval.
 
-          yield sleep initial_duration*seconds
+          yield sleep_until start_time + initial_duration*seconds
 
           while running
 
@@ -306,11 +311,9 @@ Note: we always compute the conditions at the _end_ of the upcoming interval, an
 
             end_of_interval += interval
             yield client_execute end_of_interval
-            yield sleep interval*seconds
+            yield sleep_until start_time + end_of_interval*seconds
 
           @debug 'Call hungup'
-
-Note: there will be clock drift, it is unavoidable. We could use a slightly better timer above.
 
         @call.once 'CHANNEL_HANGUP_COMPLETE'
         .then =>
