@@ -132,6 +132,7 @@ Up-to
           'fr-FR': 'Indépendamment, '
         action: ->
           @cdr.up_to = null
+          true
 
 Indicates what part of the call might be free.
 
