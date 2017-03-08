@@ -29,8 +29,8 @@ For each step we compute the new values at the specified point-in-time.
 Note: we must build a new `Rated` object since its duration can only be set once.
 
         cdr = new Rated @cdr
-          .compute duration
-          .toJSON()
+        cdr.compute duration
+        cdr = cdr.toJSON()
 
 The billing rules may modify the working CDR, but not the original cdr.
 This is done so that, when generating aggregated CDRs from rated CDRs, the `_id` and `_rev` fields esp. are not modified accidentally.
