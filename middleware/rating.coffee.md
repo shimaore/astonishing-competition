@@ -11,7 +11,7 @@
 * cfg.rating.tables (URI prefix) used to access the rating tables of the entertaining-crib module. Default: cfg.prefix_admin (from nimble-direction, i.e. env.NIMBLE_PREFIX_ADMIN)
 
     @server_pre = ->
-      debug 'server_pre', @cfg
+      @debug 'server_pre', @cfg
       @cfg.rating = new Rating
         source: @cfg.rating?.source ? 'default'
         rating_tables:
@@ -19,7 +19,7 @@
             PouchDB.defaults prefix: @cfg.rating?.tables ? @cfg.prefix_admin
           else
             @cfg.rating?.tables
-      debug 'server_pre: Ready'
+      @debug 'server_pre: Ready'
 
     @include = seem ->
 
@@ -36,52 +36,63 @@
           client: @session.endpoint # from huge-play (egress-only since 15.x)
           carrier: @session.winner # from tough-rate
 
-      debug 'Client is ', params.client?._id
-      debug 'Carrier is ', params.carrier?._id
+      @debug 'Client is ', params.client?._id
+      @debug 'Carrier is ', params.carrier?._id
 
       @session.rated = yield @cfg.rating
         .rate params
-        .catch (error) ->
-          debug "rating_rate failed: #{error.stack ? error}"
+        .catch (error) =>
+          @debug "rating_rate failed: #{error.stack ? error}"
           null
 
       @session.rated ?= {}
       @session.rated.params = params
+
+So in the best case we get:
+- session.rated.client
+- session.rated.carrier
+- session.rated.params
+
+      @debug 'session.rated', @session.rated
 
       switch
 
 This is the case e.g. for calls to voicemail.
 
         when not params.direction?
-          debug 'Routing non-billable call: no direction provided'
+          @debug 'Routing non-billable call: no direction provided'
 
 This is the case e.g. for centrex-to-centrex (internal) calls.
 
         when params.direction is 'ingress' and not params.from? and not params.to?
-          debug 'Routing non-billable call: no billable number on ingress'
+          @debug 'Routing non-billable call: no billable number on ingress'
 
 System-wide configuration accepting non-billable calls.
 
+        when not @session.rated?.client?
+          switch
+
 - ingress
 
-        when params.direction is 'ingress' and @cfg.route_non_billable_ingress_calls
-          debug 'Routing non-billable ingress call: configuration allowed'
+            when params.direction is 'ingress' and @cfg.route_non_billable_ingress_calls
+              @debug 'Routing non-billable ingress call: configuration allowed'
 
 - both directions
 
-        when @cfg.route_non_billable_calls
-          debug 'Routing non-billable call: configuration allowed'
+            when @cfg.route_non_billable_calls
+              @debug 'Routing non-billable call: configuration allowed'
 
 Reject non-billable (client-side) calls otherwise.
 
-        when not @session.rated?.client?
-          debug 'Unable to rate', @session.dialplan
-          yield @respond '500 Unable to rate'
-          return
+            else
+
+              @debug 'Unable to rate', @session.dialplan
+              yield @respond '500 Unable to rate'
+              return
 
 Accept billable calls.
 
         else
-          debug 'Routing'
+          @debug 'Routing'
 
-      debug 'Ready'
+      @debug 'Ready'

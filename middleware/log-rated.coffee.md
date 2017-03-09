@@ -196,6 +196,11 @@ Prevent calls from going through if we won't be able to rate / save them.
         @respond '500 Unable to rate'
         return
 
+Remember, we expect to have:
+- session.rated.client
+- session.rated.carrier
+- session.rated.params, esp session.rated.params.client and session.rated.params.carrier.
+
 We need to figure out:
 - where we want to log: which databases (two for client side, one for carrier side, one for traces)
 - how we want to log it: what document identifier
@@ -212,15 +217,16 @@ A rated and aggregated `client` object, used for billing, saved into the rated-d
 
 ### Before the call starts.
 
+      if @session.rated.client?
+
 We assume that invoices are generated at the `account` level.
 
-      account = @cfg.rated_account @session.rated
+        account = @cfg.rated_account @session.rated
 
 And that counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
-      sub_account = @cfg.rated_sub_account @session.rated
+        sub_account = @cfg.rated_sub_account @session.rated
 
-      if @session.rated.client?
         client_period = @cfg.period_for_client @session.rated
 
 Period-database: (monthly) database used to globally generate invoices. Contains data for all accounts.
@@ -237,6 +243,10 @@ Counters at the sub-account level.
           .catch -> yes
 
         client_aggregator = new Aggregator plans_db, period_db, counters_id, @session.rated.client
+
+      else
+
+        @debug 'No session.rated.client'
 
 Rating ornament
 ---------------
@@ -323,8 +333,11 @@ Note: we always compute the conditions at the _end_ of the upcoming interval, an
       handle_final = seem =>
         duration = Math.ceil parseInt(@session.cdr_report.billable) / seconds
 
+        @debug 'handle_final', duration
+
         if client_aggregator?
 
+          @debug 'handle_final: client'
           try
 
             cdr = yield client_aggregator.handle duration
@@ -362,6 +375,8 @@ Carrier object
 A rated `carrier` object, saved into the rated-database for the carrier.
 
         if @session.rated.carrier?
+
+          @debug 'handle_final: carrier'
 
           carrier = @cfg.rated_carrier @session.rated
           carrier_period = @cfg.period_for_carrier @session.rated

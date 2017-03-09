@@ -220,6 +220,6 @@ Used for start-of-call and mid-call conditions.
       @conditions[k] = v.condition
     @conditions.stop = commands.stop.action
     @conditions.hangup = ->
-      @call.action 'hangup'
+      @call.action 'hangup', '500 rating limit'
       @direction 'rejected'
       'over'
