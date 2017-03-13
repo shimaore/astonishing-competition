@@ -1,6 +1,7 @@
     describe 'Modules', ->
       list = [
           'middleware/rating.coffee.md'
+          'middleware/log-rated.coffee.md'
         ]
 
       unit = (m) ->
@@ -15,6 +16,7 @@
               emit: ->
             req:
               variable: -> null
+            debug: ->
           M = require "../#{m}"
           M.server_pre?.call ctx, ctx
           # M.include.call ctx, ctx
