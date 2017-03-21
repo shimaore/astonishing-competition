@@ -10,6 +10,7 @@ The code should also include tools to:
 - do call authorization at start of call (for prepaid and account restrictions on postpaid)
 - do counter updates during the call (for prepaid and account restrictions / fraud detection on postpaid)
 
+    seem = require 'seem'
     {validate} = require 'numbering-plans'
     Rated = require 'entertaining-crib/rated'
 
@@ -219,7 +220,8 @@ Used for start-of-call and mid-call conditions.
     for own k,v of commands when v.condition?
       @conditions[k] = v.condition
     @conditions.stop = commands.stop.action
-    @conditions.hangup = ->
-      @call.action 'hangup', '500 rating limit'
+    @conditions.hangup = seem ->
+      yield @respond '402 rating limit'
+      yield @action 'hangup', '402 rating limit'
       @direction 'rejected'
       'over'

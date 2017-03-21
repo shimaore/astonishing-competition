@@ -255,8 +255,8 @@ Rating ornament
 
 * doc.endpoint.rating_ornaments (ornaments) used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
 
-      ornaments = @session.rated.params.client?.rating_ornaments?
-      if ornaments
+      ornaments = @session.rated.params.client?.rating_ornaments
+      if ornaments?
         @debug 'Processing rating ornaments.'
 
         if not client_aggregator?
@@ -281,8 +281,11 @@ Then run the decision script with that CDR.
             cdr: cdr
             call: @call
             session: @session
+            action: @action.bind this
+            respond: @respond.bind this
+            direction: @direction.bind this
 
-          yield run.call ctx, ornaments, commands
+          yield run.call ctx, ornaments, conditions
 
         initial_duration = @session.rated.client?.rating_data?.initial?.duration
         if not initial_duration? or initial_duration is 0
