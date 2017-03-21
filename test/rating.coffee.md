@@ -14,6 +14,7 @@
           trigger = null
           ctx =
             cfg:
+              period_of: ->
               rating:
                 source: 'local'
                 tables: PouchDB

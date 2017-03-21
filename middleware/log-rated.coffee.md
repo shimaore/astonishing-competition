@@ -180,17 +180,25 @@ Prevent calls from going through if we won't be able to rate / save them.
       unless plans_db and (RemotePouchDB? or LocalPouchDB?)
         unless @cfg.route_non_billable_calls
           @debug 'Unable to rate, no plans_db or Remote/Local PouchDB'
-          @respond '500 Unable to rate'
+          yield @respond '500 Unable to rate'
+          @direction 'failed'
         return
 
       unless @session.rated?
         @debug 'No session.rated'
-        @respond '500 Unable to rate'
+        yield @respond '500 Unable to rate'
+        @direction 'failed'
+        return
+
+      unless @session.rated.params?
+        @debug 'No session.rated.params'
+        yield @respond '500 Unable to rate'
+        @direction 'failed'
         return
 
 Remember, we expect to have:
-- session.rated.client
-- session.rated.carrier
+- session.rated.client (might be missing)
+- session.rated.carrier (might be missing)
 - session.rated.params, esp session.rated.params.client and session.rated.params.carrier.
 
 We need to figure out:
@@ -210,6 +218,8 @@ A rated and aggregated `client` object, used for billing, saved into the rated-d
 ### Before the call starts.
 
       if @session.rated.client?
+
+        @debug 'Preprocessing client'
 
 We assume that invoices are generated at the `account` level.
 
@@ -247,7 +257,10 @@ Rating ornament
 
       ornaments = @session.rated.params.client?.rating_ornaments?
       if ornaments
+        @debug 'Processing rating ornaments.'
+
         if not client_aggregator?
+          @debug.csr 'No aggregator available.'
           yield @respond '500 no aggregator available'
           @direction 'failed'
           return
@@ -271,16 +284,19 @@ Then run the decision script with that CDR.
 
           run.call ctx, ornaments, commands
 
-        initial_duration = @session.rated?.client?.rating_data?.initial?.duration
+        initial_duration = @session.rated.client?.rating_data?.initial?.duration
         if not initial_duration? or initial_duration is 0
-          initial_duration = @session.rated?.client?.rating_data?.subsequent?.duration
+          initial_duration = @session.rated.client?.rating_data?.subsequent?.duration
 
         if not initial_duration?
+          @debug.csr 'No initial duration available'
           yield @respond '500 no initial duration available'
           @direction 'failed'
           return
 
-        interval = @session.params.client.rating_interval
+* doc.endpoint.rating_inverval (integer) Interval at which to re-evaluate the call for continuation. Defaults: cfg.rating_interval, 20s otherwise.
+
+        interval = @session.rated.params.client?.rating_interval
         interval ?= @cfg.rating_interval
         interval ?= 20
 
@@ -308,24 +324,32 @@ Then, once the call is anwered:
 
           while running
 
-Note: we always compute the conditions at the _end_ of the upcoming interval, and we do not start an interval that would result in a rejection.
+Note: we always compute the conditions at the _end_ of the _upcoming_ interval, and we do not start an interval that would result in a rejection.
 (In other words, we attempt to maintain the invariant implemented by `rating_ornaments`.)
 
             end_of_interval += interval
             yield client_execute end_of_interval
             yield sleep_until start_time + end_of_interval*seconds
 
-          @debug 'Call hungup'
+          @debug 'Call was hung up'
 
         @call.once 'CHANNEL_HANGUP_COMPLETE'
         .then =>
           debug 'CHANNEL_HANGUP_COMPLETE'
           running = false
 
+FIXME: How does this work for transferred calls? (There is a FreeSwitch flag to prevent transfers, I seem to remember.)
+
+Compute and save CDR
+====================
+
       handle_final = seem =>
         duration = Math.ceil parseInt(@session.cdr_report.billable) / seconds
 
         @debug 'handle_final', duration
+
+For the client
+--------------
 
         if client_aggregator?
 
@@ -339,7 +363,7 @@ Note: we always compute the conditions at the _end_ of the upcoming interval, an
             else
               @debug 'CDR could not be processed.'
 
-              cdr = @session.rated.client.toJSON()
+              cdr = @session.rated.client?.toJSON() ? {}
               cdr.processed = false
 
             cdr.trace_id = @session._id
@@ -388,6 +412,9 @@ Trace object
 
         yield @save_trace()
         debug 'rated:done'
+
+Put the CDR and trace in service
+--------------------------------
 
 Handle both the case where the call is over (sync)
 
