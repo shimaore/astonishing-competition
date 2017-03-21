@@ -282,7 +282,7 @@ Then run the decision script with that CDR.
             call: @call
             session: @session
 
-          run.call ctx, ornaments, commands
+          yield run.call ctx, ornaments, commands
 
         initial_duration = @session.rated.client?.rating_data?.initial?.duration
         if not initial_duration? or initial_duration is 0
@@ -302,14 +302,14 @@ Then run the decision script with that CDR.
 
 Execute the script a first time when the call is routing / in-progress.
 
-        client_execute initial_duration
+        yield client_execute initial_duration
 
 Then, once the call is anwered:
 
         running = false
 
         @call.once 'CHANNEL_ANSWER'
-        .then =>
+        .then seem =>
           @debug 'CHANNEL_ANSWER'
           running = true
           start_time = new Date()
@@ -337,6 +337,8 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
         .then =>
           debug 'CHANNEL_HANGUP_COMPLETE'
           running = false
+
+        @debug 'Rating ornament is ready.'
 
 FIXME: How does this work for transferred calls? (There is a FreeSwitch flag to prevent transfers, I seem to remember.)
 
