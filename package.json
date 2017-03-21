@@ -11,7 +11,7 @@
   "author": "Stéphane Alnet <stephane@shimaore.net> (http://stephane.shimaore.net/)",
   "license": "Unlicense",
   "peerDependencies": {
-    "huge-play": ">=17.8.0"
+    "huge-play": ">=19.0.0"
   },
   "dependencies": {
     "bluebird": "^3.5.0",
@@ -19,7 +19,6 @@
     "entertaining-crib": "^3.2.2",
     "flat-ornament": "^1.2.0",
     "marked-summer": "^1.0.3",
-    "moment-timezone": "^0.5.11",
     "numbering-plans": "^2.5.2",
     "pouchdb": "6.1.1",
     "seem": "^2.0.0",

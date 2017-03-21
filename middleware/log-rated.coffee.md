@@ -4,7 +4,6 @@
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
     PouchDB = require 'shimaore-pouchdb'
-    moment = require 'moment-timezone'
     assert = require 'assert'
     uuid = require 'uuid'
 
@@ -47,13 +46,6 @@ Compute period
         plans_db = new PouchDB @cfg.aggregation.plans
       else
         debug 'Missing cfg.aggregation.plans'
-
-* cfg.period_of (function) convert a timestamp into a billing period. Default: 'YYYY-MM' monthly period based on timestamp as UTC.
-
-      @cfg.period_of ?= (stamp,timezone = 'UTC') ->
-        moment
-        .tz stamp, timezone
-        .format 'YYYY-MM'
 
 * cfg.period_for (function, optional) maps a rated.client or rated.carrier into a period. Default: use cfg.period_of on the connection timestamp and timezone.
 
