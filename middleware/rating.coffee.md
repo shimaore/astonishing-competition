@@ -67,6 +67,9 @@ This is the case e.g. for centrex-to-centrex (internal) calls.
         when params.direction is 'ingress' and not params.from? and not params.to?
           @debug 'Routing non-billable call: no billable number on ingress'
 
+        when params.direction is 'centrex-internal'
+          @debug 'Routing internal Centrex call'
+
 System-wide configuration accepting non-billable calls.
 
         when not @session.rated?.client?
