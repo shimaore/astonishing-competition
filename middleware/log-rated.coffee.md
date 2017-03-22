@@ -4,6 +4,7 @@
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
     PouchDB = require 'shimaore-pouchdb'
+    moment = require 'moment'
     assert = require 'assert'
     uuid = require 'uuid'
 
@@ -18,9 +19,9 @@ Save remotely by default, fallback to
     {conditions} = require '../commands'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
-      now = new Date()
-      if time > now
-        sleep time-now
+      now = moment.utc()
+      if time.isAfter now
+        sleep time.diff now
 
     seconds = 1000
 
@@ -315,15 +316,16 @@ Then, once the call is anwered:
         .then seem =>
           @debug 'CHANNEL_ANSWER'
           running = true
-          start_time = new Date()
+          start_time = moment.utc()
 
 - Execute the script a second time at the time the call is actually answered (things might have changed while the call was making progress and/or being routed).
 
+          end_of_interval = initial_duration
           yield client_execute end_of_interval
 
 - After that, do a first check at the end of the initial-duration, then once for every interval.
 
-          yield sleep_until start_time + initial_duration*seconds
+          yield sleep_until start_time.clone().add seconds: end_of_interval
 
           while running
 
@@ -332,7 +334,7 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
 
             end_of_interval += interval
             yield client_execute end_of_interval
-            yield sleep_until start_time + end_of_interval*seconds
+            yield sleep_until start_time.clone().add seconds: end_of_interval
 
           @debug 'Call was hung up'
 
