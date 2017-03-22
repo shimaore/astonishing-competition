@@ -246,6 +246,8 @@ Counters at the sub-account level.
           .catch -> yes
 
         client_aggregator = new Aggregator plans_db, period_db, counters_id, @session.rated.client
+        if @session.rated.client?.rating?.plan is false
+          client_aggregator.ornaments = []
 
       else
 

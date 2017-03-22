@@ -4,6 +4,7 @@
     seem = require 'seem'
 
     Rating = require 'entertaining-crib'
+    Rated = require 'entertaining-crib/rated'
     PouchDB = require 'shimaore-pouchdb'
 
 * cfg.rating (object, optional) parameters for the rating of calls
@@ -53,8 +54,6 @@ So in the best case we get:
 - session.rated.carrier
 - session.rated.params
 
-      @debug 'session.rated', @session.rated
-
       switch
 
 This is the case e.g. for calls to voicemail.
@@ -91,11 +90,28 @@ Reject non-billable (client-side) calls otherwise.
 
               @debug 'Unable to rate', @session.dialplan
               yield @respond '500 Unable to rate'
+              @direction 'unable-to-rate'
               return
 
 Accept billable calls.
 
         else
           @debug 'Routing'
+
+      @session.rated.client ?= new Rated
+        billable_number: 'none'
+        connect_stamp: new Date().toJSON()
+        remote_number: 'none'
+        rating_data:
+          initial:
+            cost: 0
+            duration: 0
+          subsequent:
+            cost: 0
+            duration: 1
+        rating:
+          plan: false
+
+      @debug 'session.rated', @session.rated
 
       @debug 'Ready'
