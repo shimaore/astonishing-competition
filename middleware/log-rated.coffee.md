@@ -268,6 +268,9 @@ Rating ornament
           @direction 'failed'
           return
 
+        for own k,v of conditions
+          @ornaments_commands[k] = v
+
 Execute the call decision script at the given duration point.
 
         client_execute = seem (duration) =>
@@ -280,15 +283,13 @@ First compute the CDR at that time point.
 
 Then run the decision script with that CDR.
 
-          ctx =
-            cdr: cdr
-            call: @call
-            session: @session
-            action: @action.bind this
-            respond: @respond.bind this
-            direction: @direction.bind this
+          @cdr = cdr
 
-          yield run.call ctx, ornaments, conditions
+Note: not all ornament-commands (especially the ones defined in huge-play) are applicable to all calls.
+
+          yield run.call this, ornaments, @ornaments_commands
+
+          delete @cdr
 
         initial_duration = @session.rated.client?.rating_data?.initial?.duration
         if not initial_duration? or initial_duration is 0
