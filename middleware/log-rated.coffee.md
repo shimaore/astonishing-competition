@@ -372,6 +372,8 @@ Compute and save CDR
 
         if client_execute?
           yield client_execute duration
+            .catch (error) =>
+              @debug "client_execute: #{error.stack ? error}"
 
 For the client
 --------------
