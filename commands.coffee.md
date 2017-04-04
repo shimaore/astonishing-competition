@@ -98,7 +98,7 @@ Increment a counter for this call (once)
           'fr-FR': 'incrémente {0} de {1}'
         action: (counter,value = 1) ->
           @counters[counter] ?= 0
-          name = "incremented #{counter}"
+          name = "_incremented #{counter}"
           unless @cdr[name]
             @counters[counter] += value
             @cdr[name] = true
@@ -122,7 +122,7 @@ Increment a counter with this call duration (once)
           'fr-FR': "incrémente {0} de la durée de l'appel"
         action: (counter) ->
           @counters[counter] ?= 0
-          name = "incremented #{counter}"
+          name = "_incremented #{counter}"
           @cdr[name] ?= 0
           if @cdr.duration > @cdr[name]
             @counters[counter] += @cdr.duration - @cdr[name]
