@@ -97,11 +97,11 @@ Increment a counter for this call (once)
         name:
           'fr-FR': 'incrémente {0} de {1}'
         action: (counter,value = 1) ->
-          @cdr.incremented ?= {}
           @counters[counter] ?= 0
-          unless @cdr.incremented[counter]
+          name = "incremented #{counter}"
+          unless @cdr[name]
             @counters[counter] += value
-            @cdr.incremented[counter] = true
+            @cdr[name] = true
           true
 
 - per specified period (default: daily)
@@ -121,12 +121,12 @@ Increment a counter with this call duration (once)
         name:
           'fr-FR': "incrémente {0} de la durée de l'appel"
         action: (counter) ->
-          @cdr.incremented ?= {}
           @counters[counter] ?= 0
-          @cdr.incremented[counter] ?= 0
-          if @cdr.duration > @cdr.incremented[counter]
-            @counters[counter] += @cdr.duration - @cdr.incremented[counter]
-          @cdr.incremented[counter] = @cdr.duration
+          name = "incremented #{counter}"
+          @cdr[name] ?= 0
+          if @cdr.duration > @cdr[name]
+            @counters[counter] += @cdr.duration - @cdr[name]
+          @cdr[name] = @cdr.duration
           true
 
 - per specified period (default: daily)
