@@ -273,6 +273,8 @@ Rating ornament
         client_runner.ornaments = ->
           ornaments
 
+        runner_cdr = {}
+
 Execute the call decision script at the given duration point.
 
         client_execute = seem (duration) =>
@@ -282,6 +284,8 @@ Execute the call decision script at the given duration point.
 First compute the CDR at that time point.
 
           cdr = yield client_aggregator.handle duration
+          for own k,v of cdr
+            runner_cdr[k] = v
 
 Note: not all ornament-commands (especially the ones defined in huge-play) are applicable to all calls.
 
@@ -292,7 +296,7 @@ Next, evaluate the client decision code as well.
             @counters = counters
             this
 
-          yield client_runner.run cdr
+          yield client_runner.run runner_cdr
 
           delete @cdr
           delete @counters

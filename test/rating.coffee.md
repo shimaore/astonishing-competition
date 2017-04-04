@@ -27,16 +27,18 @@
                 local: 'local-'
                 plans: 'plans'
               safely_write: (db,cdr) ->
-                console.log cdr
-                cdr.should.have.property 'duration', 33
-                if cdr.side is 'client'
-                  cdr.should.have.property 'amount', 7
-                  cdr.should.have.property 'counters'
-                  cdr.counters.PRIVATE_COUNTERS.should.have.property "cat --- #{day}", 33
-                  seen++
-                if cdr.side is 'carrier'
-                  cdr.should.have.property 'amount', 0.55
-                  seen++
+                try
+                  cdr.should.have.property 'duration', 33
+                  if cdr.side is 'client'
+                    cdr.should.have.property 'amount', 7
+                    cdr.should.have.property 'counters'
+                    cdr.counters.PRIVATE_COUNTERS.should.have.property "cat --- #{day}", 33
+                    seen++
+                  if cdr.side is 'carrier'
+                    cdr.should.have.property 'amount', 0.55
+                    seen++
+                catch error
+                  done error
                 if seen is 2
                   done()
 
