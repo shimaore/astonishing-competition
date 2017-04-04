@@ -15,7 +15,7 @@ Save remotely by default, fallback to
     plans_db = null
 
     Aggregator = require '../aggregation'
-    run = require 'flat-ornament'
+    Runner = require '../runner'
     {conditions} = require '../commands'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
@@ -246,8 +246,6 @@ Counters at the sub-account level.
           .catch -> yes
 
         client_aggregator = new Aggregator plans_db, period_db, counters_id, @session.rated.client
-        if @session.rated.client?.rating?.plan is false
-          client_aggregator.ornaments = []
 
       else
 
@@ -271,6 +269,10 @@ Rating ornament
         for own k,v of conditions
           @ornaments_commands[k] = v
 
+        client_runner = new Runner period_db, counters_id, @ornaments_commands
+        client_runner.ornaments = ->
+          ornaments
+
 Execute the call decision script at the given duration point.
 
         client_execute = seem (duration) =>
@@ -281,15 +283,21 @@ First compute the CDR at that time point.
 
           cdr = yield client_aggregator.handle duration
 
-Then run the decision script with that CDR.
-
-          @cdr = cdr
-
 Note: not all ornament-commands (especially the ones defined in huge-play) are applicable to all calls.
 
-          yield run.call this, ornaments, @ornaments_commands
+Next, evaluate the client decision code as well.
+
+          client_runner.context = (cdr,counters) =>
+            @cdr = cdr
+            @counters = counters
+            this
+
+          yield client_runner.run cdr
 
           delete @cdr
+          delete @counters
+
+          @debug 'client_execute completed', duration
 
         initial_duration = @session.rated.client?.rating_data?.initial?.duration
         if not initial_duration? or initial_duration is 0
@@ -357,6 +365,9 @@ Compute and save CDR
         duration = Math.ceil parseInt(@session.cdr_report.billable) / seconds
 
         @debug 'handle_final', duration
+
+        if client_execute?
+          yield client_execute duration
 
 For the client
 --------------

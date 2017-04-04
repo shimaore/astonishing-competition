@@ -10,6 +10,10 @@
       m2 = require '../middleware/log-rated'
       it 'should set `rated`', (done) ->
         @timeout 7*1000
+
+        day = new Date().toJSON()[0...10]
+
+        seen = 0
         p = seem ->
           trigger = null
           ctx =
@@ -23,9 +27,22 @@
                 local: 'local-'
                 plans: 'plans'
               safely_write: (db,cdr) ->
+                console.log cdr
                 cdr.should.have.property 'duration', 33
-                cdr.should.have.property 'amount', 0
-                done()
+                if cdr.side is 'client'
+                  cdr.should.have.property 'amount', 7
+                  cdr.should.have.property 'counters'
+                  cdr.counters.PRIVATE_COUNTERS.should.have.property "cat --- #{day}", 33
+                  seen++
+                if cdr.side is 'carrier'
+                  cdr.should.have.property 'amount', 0.55
+                  seen++
+                if seen is 2
+                  done()
+
+            ornaments_commands:
+              display: ->
+                console.dir this
 
             session:
               cdr_direction:'egress'
@@ -40,6 +57,11 @@ Client-side data
                   '2016-01-01':
                     table: 'client+current'
                 timezone: 'UTC'
+                rating_ornaments: [
+                  [['increment_per','bear',2]]
+                  ['increment_duration_per cat']
+                  ['display']
+                ]
 
 Carrier-side data
 
@@ -88,10 +110,10 @@ Carrier-side data
           yield db.put
             _id:'prefix:1800'
             initial:
-              cost: 0
-              duration: 0
+              cost: 4
+              duration: 2
             subsequent:
-              cost: 1
+              cost: 3
               duration: 60
           db.close()
           db = new ctx.cfg.rating.PouchDB 'rates-carrier+current'
@@ -107,7 +129,7 @@ Carrier-side data
               cost: 0
               duration: 0
             subsequent:
-              cost: 0
+              cost: 1
               duration: 1
           db.close()
 

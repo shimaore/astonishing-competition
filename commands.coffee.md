@@ -322,9 +322,8 @@ The actual semantics here are "call is free _up-to_ {the values specified previo
 Used for start-of-call and mid-call conditions.
 
     @conditions = {}
-    for own k,v of commands when v.condition?
-      @conditions[k] = v.condition
-    @conditions.stop = commands.stop.action
+    for own k,v of commands
+      @conditions[k] = v.condition ? v.action
     @conditions.hangup = seem ->
       yield @respond '402 rating limit'
       yield @action 'hangup', '402 rating limit'
