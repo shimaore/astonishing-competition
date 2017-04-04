@@ -47,9 +47,9 @@ save the former values,
 and re-inject the private values into a new record.
 
           counters = {}
-          for own k,v of former_counters.PRIVATE_COUNTERS
+          for own k,v of former_counters.PRIVATE_COUNTERS when k[0] isnt '_'
             counters[k] = v
-          for own k,v of former_counters
+          for own k,v of former_counters when k[0] isnt '_'
             counters[k] = v
           delete counters.PRIVATE_COUNTERS
 
@@ -66,7 +66,7 @@ If we are executing untrusted code,
 save the private values
 
           PRIVATE = {}
-          for own k,v of counters when k not in former_counters
+          for own k,v of counters when k[0] isnt '_' and k not in former_counters
             PRIVATE[k] = v
 
 and restore the former values.
