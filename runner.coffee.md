@@ -110,7 +110,7 @@ If the counters were modified while we were computing, do another loop.
 Generate and evaluate a new CDR
 -------------------------------
 
-      handle: seem (cdr,duration) ->
+      evaluate: seem (cdr,duration) ->
 
         debug 'handle', duration
 

@@ -26,7 +26,7 @@ The Aggregator is used to run the plan's actual billing code.
 * doc.plan.ornaments The [`flat-ornaments`](#pkg.flat-ornaments) implementation of the billing plan, using the commands described in the [`astonishing-competition`](#pkg.astonishing-competition) package.
 
       handle: (duration) ->
-        super @cdr, duration
+        @evaluate @cdr, duration
 
       ornaments: (cdr) ->
 
