@@ -47,14 +47,15 @@ save the former values,
 and re-inject the private values into a new record.
 
           counters = {}
-          for own k,v of counters.PRIVATE_COUNTERS
+          for own k,v of former_counters.PRIVATE_COUNTERS
             counters[k] = v
-          for own k,v of counters
+          for own k,v of former_counters
             counters[k] = v
+          delete counters.PRIVATE_COUNTERS
 
         ctx = @context cdr, counters
 
-        debug 'run', ctx
+        debug 'run'
 
         yield run.call ctx, ornaments, @commands
 
