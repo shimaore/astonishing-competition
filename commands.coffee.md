@@ -13,10 +13,62 @@ The code should also include tools to:
     seem = require 'seem'
     {validate} = require 'numbering-plans'
     Rated = require 'entertaining-crib/rated'
+    moment = require 'moment-timezone'
+
+Period
+------
+
+Counters might be automatically indexed based on a format-string for the calls' date and time.
+This allows e.g. to have daily counters (the default) on top of "billing-period" counters.
+
+    cdr_period = ( cdr, period = 'YYYY-MM-DD' ) ->
+
+Cache
+
+      cdr.period ?= {}
+      if cdr.period[period]?
+        return cdr.period[period]
+
+Shortcuts
+
+      switch period
+
+`day` is normally unambiguous, except on the first and last day of the billing period.
+
+        when 'day'
+          period = 'YYYY-MM-DD'
+
+'hour' is normally unamiguous.
+
+        when 'hour'
+          period = 'YYYY-MM-DD HH'
+
+`week` is highly ambiguous, since counters are reset at the start of the billing period.
+
+        when 'week'
+          period = 'YYYY-w'
+
+`day-of-week` is normally unambiguous, except on the first and last day of the billing period.
+
+        when 'day-of-week'
+          period = 'd'
+
+      cdr.period[period] = moment cdr.stamp
+        .tz cdr.timezone
+        .format period
+
+    counter_period = ( counter, cdr, period ) ->
+      "#{counter} --- #{cdr_period cdr, period}"
 
     commands =
 
+Counter names typically should reflect the conditions attached to them.
+For example: counter = `mobile` + `count_called` = "number of mobile phone called (per billing period)"
+
 Counters
+--------
+
+- per billing period
 
       count_called:
         name:
@@ -28,7 +80,18 @@ Counters
           @counters[counter] = Object.keys(@counters[key]).length
           true
 
+- per specified period (default: daily)
+
+      count_called_per:
+        name:
+          'fr-FR': 'destinataires {0} différents par {1}'
+        action: (counter,period) ->
+          name = counter_period counter, @cdr, period
+          commands.count_called.action.call this, name
+
 Increment a counter for this call (once)
+
+- per billing period
 
       increment:
         name:
@@ -41,7 +104,18 @@ Increment a counter for this call (once)
             @cdr.incremented[counter] = true
           true
 
+- per specified period (default: daily)
+
+      increment_per:
+        name:
+          'fr-FR': 'incrémente {0} de {1} par {2}'
+        action: (counter,value,period) ->
+          name = counter_period counter, @cdr, period
+          commands.increment.action.call this, name, value
+
 Increment a counter with this call duration (once)
+
+- per billing period
 
       increment_duration:
         name:
@@ -55,7 +129,18 @@ Increment a counter with this call duration (once)
           @cdr.incremented[counter] = @cdr.duration
           true
 
+- per specified period (default: daily)
+
+      increment_duration_per:
+        name:
+          'fr-FR': "incrémente {0} par {1} de la durée de l'appel"
+        action: (counter,period) ->
+          name = counter_period counter, @cdr, period
+          commands.increment_duration.action.call this, name
+
 Counters conditions
+
+- per billing period
 
       at_most:
         name:
@@ -63,6 +148,15 @@ Counters conditions
         condition: (maximum,counter) ->
           value = @counters[counter] ? 0
           value <= maximum
+
+- per specified period (default: daily)
+
+      at_most_per:
+        name:
+          'fr=FR': 'au plus {0} {1} par {2}'
+        condition: (maximum,counter,period) ->
+          name = counter_period counter, @cdr, period
+          commands.at_most.condition.call this, maximum, name
 
 Destination conditions
 
@@ -152,9 +246,11 @@ Keep the most restrictive (lowest) value
 The `up_to` command is both an action (it modifies the CDR) and a condition (it does not always return true).
 Still marking it as an action so that it does not show up in the exported conditions.
 
+- per billing period
+
       up_to:
         name:
-          'fr-FR': "jusqu'à {0} secondes {1} mensuelles"
+          'fr-FR': "jusqu'à {0} secondes {1} par facture"
         action: (total_up_to,counter) ->
           value = @counters[counter] ? 0
 
@@ -171,6 +267,15 @@ Keep the most restrictive (lowest) value
 
           @cdr.up_to = up_to if @cdr.up_to > up_to
           true
+
+- per specific period
+
+      up_to_per:
+        name:
+          'fr=FR': "jusqu'à {0} secondes {1} par {2}"
+        condition: (total_up_to,counter,period) ->
+          name = counter_period counter, @cdr, period
+          commands.up_to.action.call this, total_up_to, name
 
 Actions
 -------
