@@ -17,7 +17,7 @@
     "bluebird": "^3.5.0",
     "debug": "^2.6.3",
     "entertaining-crib": "^3.2.2",
-    "flat-ornament": "^1.2.0",
+    "flat-ornament": "^2.0.0",
     "marked-summer": "^1.0.3",
     "moment": "^2.18.1",
     "numbering-plans": "^2.5.2",
