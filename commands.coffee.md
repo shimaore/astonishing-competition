@@ -53,7 +53,9 @@ Shortcuts
         when 'day-of-week'
           period = 'd'
 
-      cdr.period[period] = moment cdr.stamp
+A proper 'Rated' CDR should have a `connect_stamp` field.
+
+      cdr.period[period] = moment cdr.connect_stamp
         .tz cdr.timezone
         .format period
 
