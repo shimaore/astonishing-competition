@@ -1,7 +1,7 @@
     seem = require 'seem'
     run = require 'flat-ornament'
     Rated = require 'entertaining-crib/rated'
-    debug = (require 'debug') 'astonishing-competition:runner'
+    debug = (require 'tangible') 'astonishing-competition:runner'
 
     {rate} = require './commands'
 

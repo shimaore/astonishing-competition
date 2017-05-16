@@ -1,7 +1,7 @@
     chai = require 'chai'
     chai.should()
     seem = require 'seem'
-    debug = (require 'debug') "#{(require '../package').name}:middleware:rating"
+    debug = (require 'tangible') "#{(require '../package').name}:middleware:rating"
     PouchDB = (require 'pouchdb')
       .plugin require 'pouchdb-adapter-memory'
       .defaults adapter:'memory'

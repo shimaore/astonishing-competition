@@ -1,5 +1,5 @@
     @name = "#{(require '../package').name}:middleware:log-rated"
-    debug = (require 'debug') @name
+    debug = (require 'tangible') @name
     seem = require 'seem'
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
