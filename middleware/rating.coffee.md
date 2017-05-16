@@ -1,6 +1,5 @@
     pkg = require '../package.json'
     @name = "#{pkg.name}:middleware:rating"
-    debug = (require 'debug') @name
     seem = require 'seem'
 
     Rating = require 'entertaining-crib'
@@ -12,7 +11,7 @@
 * cfg.rating.tables (URI prefix) used to access the rating tables of the entertaining-crib module. Default: cfg.prefix_admin (from nimble-direction, i.e. env.NIMBLE_PREFIX_ADMIN)
 
     @server_pre = ->
-      @debug 'server_pre', @cfg
+      @debug 'server_pre'
       @cfg.rating = new Rating
         source: @cfg.rating?.source ? 'default'
         rating_tables:
