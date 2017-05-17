@@ -16,7 +16,7 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "debug": "^2.6.6",
-    "entertaining-crib": "^3.2.2",
+    "entertaining-crib": "^3.3.0",
     "flat-ornament": "^2.0.0",
     "marked-summer": "^1.0.3",
     "moment": "^2.18.1",
@@ -24,7 +24,7 @@
     "pouchdb": "6.2.0",
     "seem": "^2.0.0",
     "shimaore-pouchdb": "6.2.0-b",
-    "tangible": "^1.2.2",
+    "tangible": "^1.4.0",
     "uuid": "^3.0.1"
   },
   "devDependencies": {
