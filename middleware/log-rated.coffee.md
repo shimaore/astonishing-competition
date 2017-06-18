@@ -295,14 +295,6 @@ Do not store CDRs for calls that must be hidden (e.g. emergency calls in most ju
           catch error
             debug "safely_write client: #{error.stack ? error}", period_database
 
-          yield period_db
-            .close()
-            .catch (error) ->
-              debug "billing db close: #{error.stack ? error}"
-              null
-
-          period_db = null
-
 Carrier object
 --------------
 
@@ -423,9 +415,11 @@ Execute the script a first time when the call is routing / in-progress.
 
         yield client_execute initial_duration
 
-Then, once the call is anwered:
+Then, once the call is answered:
 
         running = false
+
+        yield @call.event_json 'CHANNEL_ANSWER', 'CHANNEL_HANGUP_COMPLETE'
 
         @call.once 'CHANNEL_ANSWER'
         .then seem =>
@@ -450,6 +444,16 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
             end_of_interval += interval
             yield client_execute end_of_interval
             yield sleep_until start_time.clone().add seconds: end_of_interval
+
+          ###
+          yield period_db
+            .close()
+            .catch (error) ->
+              debug "billing db close: #{error.stack ? error}"
+              null
+          ###
+
+          period_db = null
 
           debug 'Call was hung up'
 

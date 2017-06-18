@@ -78,6 +78,7 @@ Carrier-side data
             respond: ->
 
             call:
+              event_json: -> Promise.resolve null
               once: (event) ->
                 switch event
                   when 'CHANNEL_ANSWER'
