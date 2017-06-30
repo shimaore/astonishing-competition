@@ -21,9 +21,9 @@
     "marked-summer": "^1.0.3",
     "moment": "^2.18.1",
     "numbering-plans": "^2.5.2",
-    "pouchdb": "6.2.0",
+    "pouchdb": "6",
     "seem": "^2.0.0",
-    "shimaore-pouchdb": "6.2.0-b",
+    "shimaore-pouchdb": "6",
     "tangible": "^1.4.0",
     "uuid": "^3.0.1"
   },
@@ -33,6 +33,7 @@
     "coffee-script": "^1.12.6",
     "memdown": "^1.2.4",
     "mocha": "^3.4.1",
-    "pouchdb-adapter-memory": "^6.2.0"
+    "pouchdb-adapter-memory": "6",
+    "scope-eval": "^1.0.0"
   }
 }
