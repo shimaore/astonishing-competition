@@ -4,6 +4,7 @@
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
     PouchDB = require 'shimaore-pouchdb'
+    LRU = require 'lru-cache'
     moment = require 'moment'
     assert = require 'assert'
     uuid = require 'uuid'
@@ -13,6 +14,8 @@ Save remotely by default, fallback to
     RemotePouchDB = null
     LocalPouchDB = null
     plans_db = null
+
+    cache = LRU max: 12
 
     Aggregator = require '../aggregation'
     Runner = require '../runner'
@@ -32,14 +35,30 @@ Compute period
 * cfg.aggregation.remote (string,URI,required) base URI for remote invoicing databases
 
       if @cfg.aggregation?.remote?
-        RemotePouchDB = PouchDB.defaults prefix: @cfg.aggregation.remote
+        RemotePouchDB = (name) =>
+          cache_name = "RemotePouchDB #{name}"
+          if cache.has cache_name
+            cache.get cache_name
+          else
+            db = new PouchDB name, prefix: @cfg.aggregation.remote
+            cache.set cache_name, db
+            db
+
       else
         debug 'Missing cfg.aggregation.remote'
 
 * cfg.aggregation.local (string,path) directory where CDRs are stored if cfg.aggregation.remote fails. The directory must be present.
 
       if @cfg.aggregation?.local?
-        LocalPouchDB = PouchDB.defaults prefix: @cfg.aggregation.local
+        LocalPouchDB = (name) =>
+          cache_name = "LocalPouchDB #{name}"
+          if cache.has cache_name
+            cache.get cache_name
+          else
+            db = new PouchDB name, prefix: @cfg.aggregation.local
+            cache.set cache_name, db
+            db
+
       else
         debug 'Missing cfg.aggregation.local'
 
@@ -111,19 +130,13 @@ Try remote database, local database, and local file.
         return unless RemotePouchDB?
 
         debug 'try remote db', database, data._id
-        remote_db = new RemotePouchDB database
+        remote_db = RemotePouchDB database
 
         try
           yield remote_db.put data
 
         catch error
           safely_write_local database, data
-
-        yield remote_db
-          .close()
-          .catch (error) ->
-            debug "remote db close #{error.stack ? error}"
-            null
 
         remote_db = null
 
@@ -135,7 +148,7 @@ Safely-write, local database
         return unless LocalPouchDB?
 
         debug 'try local db', database
-        local_db = new LocalPouchDB database
+        local_db = LocalPouchDB database
 
         try
           yield local_db.put data
@@ -147,12 +160,6 @@ FIXME purge local_db so that it doesn't just grow in size indefinitely
           safely_write_file database, data
 
 FIXME upload locally-saved JSON files to remote-db
-
-        yield local_db
-          .close()
-          .catch (error) ->
-            debug "local db close: #{error.stack ? error}"
-            null
 
         local_db = null
 
@@ -235,7 +242,7 @@ And that counters are handled at the `sub_account` level (although we could also
 Period-database: (monthly) database used to globally generate invoices. Contains data for all accounts.
 
         period_database = [@cfg.CDR_DB_PREFIX,client_period].join '-'
-        period_db = new RemotePouchDB period_database
+        period_db = RemotePouchDB period_database
 
 Counters at the sub-account level.
 
@@ -444,14 +451,6 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
             end_of_interval += interval
             yield client_execute end_of_interval
             yield sleep_until start_time.clone().add seconds: end_of_interval
-
-          ###
-          yield period_db
-            .close()
-            .catch (error) ->
-              debug "billing db close: #{error.stack ? error}"
-              null
-          ###
 
           period_db = null
 
