@@ -5,10 +5,16 @@
     Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'
     PouchDB = require 'shimaore-pouchdb'
+    LRU = require 'lru-cache'
 
 * cfg.rating (object, optional) parameters for the rating of calls
 * cfg.rating.source (string) name of the cfg.rating.tables source. Default: `default`
 * cfg.rating.tables (URI prefix) used to access the rating tables of the entertaining-crib module. Default: cfg.prefix_admin (from nimble-direction, i.e. env.NIMBLE_PREFIX_ADMIN)
+
+    cache = LRU
+      max: 200
+      dispose: (key,value) ->
+        value?.close?()
 
     @server_pre = ->
       @debug 'server_pre'
@@ -16,7 +22,13 @@
         source: @cfg.rating?.source ? 'default'
         rating_tables:
           if not @cfg.rating?.tables? or typeof @cfg.rating.tables is 'string'
-            PouchDB.defaults prefix: @cfg.rating?.tables ? @cfg.prefix_admin
+            (name) ->
+              if cache.has name
+                cache.get name
+              else
+                db = new PouchDB name, prefix: @cfg.rating?.tables ? @cfg.prefix_admin
+                cache.set name, db
+                db
           else
             @cfg.rating?.tables
       @debug 'server_pre: Ready'

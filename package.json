@@ -16,7 +16,7 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "debug": "^2.6.6",
-    "entertaining-crib": "^3.3.0",
+    "entertaining-crib": "^4.0.0",
     "flat-ornament": "^2.0.0",
     "lru-cache": "^4.1.1",
     "marked-summer": "^1.0.3",
