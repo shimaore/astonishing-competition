@@ -15,7 +15,10 @@ Save remotely by default, fallback to
     LocalPouchDB = null
     plans_db = null
 
-    cache = LRU max: 12
+    cache = LRU
+      max: 12
+      dispose: (key,value) ->
+        value?.close?()
 
     Aggregator = require '../aggregation'
     Runner = require '../runner'
