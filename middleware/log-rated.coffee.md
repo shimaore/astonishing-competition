@@ -18,6 +18,7 @@ Save remotely by default, fallback to
     cache = LRU
       max: 12
       dispose: (key,value) ->
+        debug 'Dispose of', key
         value?.close?()
 
     Aggregator = require '../aggregation'
@@ -40,12 +41,11 @@ Compute period
       if @cfg.aggregation?.remote?
         RemotePouchDB = (name) =>
           cache_name = "RemotePouchDB #{name}"
-          if cache.has cache_name
-            cache.get cache_name
-          else
-            db = new PouchDB name, prefix: @cfg.aggregation.remote
-            cache.set cache_name, db
-            db
+          db = cache.get cache_name
+          return db if db?
+          db = new PouchDB name, prefix: @cfg.aggregation.remote
+          cache.set cache_name, db
+          db
 
       else
         debug 'Missing cfg.aggregation.remote'
@@ -55,12 +55,11 @@ Compute period
       if @cfg.aggregation?.local?
         LocalPouchDB = (name) =>
           cache_name = "LocalPouchDB #{name}"
-          if cache.has cache_name
-            cache.get cache_name
-          else
-            db = new PouchDB name, prefix: @cfg.aggregation.local
-            cache.set cache_name, db
-            db
+          db = cache.get cache_name
+          return db if db?
+          db = new PouchDB name, prefix: @cfg.aggregation.local
+          cache.set cache_name, db
+          db
 
       else
         debug 'Missing cfg.aggregation.local'

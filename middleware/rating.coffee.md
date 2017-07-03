@@ -14,6 +14,7 @@
     cache = LRU
       max: 200
       dispose: (key,value) ->
+        debug 'Dispose of', key
         value?.close?()
 
     @server_pre = ->
@@ -22,13 +23,12 @@
         source: @cfg.rating?.source ? 'default'
         rating_tables:
           if not @cfg.rating?.tables? or typeof @cfg.rating.tables is 'string'
-            (name) ->
-              if cache.has name
-                cache.get name
-              else
-                db = new PouchDB name, prefix: @cfg.rating?.tables ? @cfg.prefix_admin
-                cache.set name, db
-                db
+            (name) =>
+              db = cache.get name
+              return db if db?
+              db = new PouchDB name, prefix: @cfg.rating?.tables ? @cfg.prefix_admin
+              cache.set name, db
+              db
           else
             @cfg.rating?.tables
       @debug 'server_pre: Ready'
