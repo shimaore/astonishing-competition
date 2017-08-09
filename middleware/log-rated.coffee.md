@@ -329,7 +329,7 @@ A rated `carrier` object, saved into the rated-database for the carrier.
 Trace object
 ------------
 
-        yield @save_trace()
+        @save_trace()
         debug 'rated:done'
 
 Put the CDR and trace in service
