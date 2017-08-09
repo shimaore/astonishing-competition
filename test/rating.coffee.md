@@ -100,10 +100,7 @@ Carrier-side data
           ctx.should.have.property 'cfg'
           ctx.cfg.should.have.property 'rating'
 
-* cfg.rating.PouchDB ignore
-
-          debug 'tables', ctx.cfg.rating.PouchDB
-          db = new ctx.cfg.rating.PouchDB 'rates-client+current'
+          db = new PouchDB 'rates-client+current'
           yield db.put
             _id:'configuration'
             currency: 'EUR'
@@ -119,7 +116,7 @@ Carrier-side data
               cost: 3
               duration: 60
           db.close()
-          db = new ctx.cfg.rating.PouchDB 'rates-carrier+current'
+          db = new PouchDB 'rates-carrier+current'
           yield db.put
             _id:'configuration'
             currency: 'EUR'
