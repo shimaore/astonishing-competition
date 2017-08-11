@@ -22,7 +22,8 @@
     "marked-summer": "^1.0.3",
     "moment": "^2.18.1",
     "numbering-plans": "^2.5.2",
-    "pouchdb": "*",
+    "pouchdb-adapter-http": "^6.3.4",
+    "pouchdb-core": "^6.3.4",
     "seem": "^2.0.0",
     "tangible": "^1.4.0",
     "uuid": "^3.0.1"
