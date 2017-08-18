@@ -327,10 +327,6 @@ A rated `carrier` object, saved into the rated-database for the carrier.
           catch error
             debug "safely_write carrier: #{error.stack ? error}", carrier_database
 
-Trace object
-------------
-
-        @save_trace()
         debug 'rated:done'
 
 Put the CDR and trace in service
