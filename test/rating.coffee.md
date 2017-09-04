@@ -44,7 +44,8 @@
 
             ornaments_commands:
               display: ->
-                console.dir this
+                # console.dir this
+                true
 
             session:
               cdr_direction:'egress'

@@ -267,7 +267,7 @@ Compute and save CDR
       debug 'Setting handle_final'
 
       handle_final = seem =>
-        duration = Math.ceil parseInt(@session.cdr_report.billable) / seconds
+        duration = Math.ceil( parseInt(@session.cdr_report.billable,10) / seconds )
 
         debug 'handle_final', duration
 
