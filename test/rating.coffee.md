@@ -60,11 +60,11 @@ Client-side data
                   '2016-01-01':
                     table: 'client+current'
                 timezone: 'UTC'
-                rating_ornaments: [
-                  [['increment_per','bear',2]]
-                  ['increment_duration_per cat']
-                  ['display']
-                ]
+                rating_ornaments: '''
+                  increment_per("bear",2) and
+                  increment_duration_per("cat") and
+                  display().
+                '''
 
 Carrier-side data
 

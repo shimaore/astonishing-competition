@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "bluebird": "^3.5.0",
-    "entertaining-crib": "^4.0.0",
-    "flat-ornament": "^2.1.0",
+    "entertaining-crib": "^4.0.1",
+    "flat-ornament": "^3.0.0",
     "lru-cache": "^4.1.1",
     "marked-summer": "^1.0.3",
     "moment": "^2.18.1",
@@ -28,9 +28,9 @@
     "uuid": "^3.1.0"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
+    "chai": "^4.1.2",
     "coffee-coverage": "^2.0.1",
-    "coffee-script": "^1.12.6",
+    "coffee-script": "^1.12.7",
     "memdown": "^1.2.4",
     "mocha": "^3.5.0",
     "pouchdb-adapter-memory": "^6.3.4",
