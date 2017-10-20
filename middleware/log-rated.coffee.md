@@ -3,7 +3,7 @@
     seem = require 'seem'
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
-    PouchDB = require 'pouchdb-core'
+    PouchDB = require 'shimaore-pouchdb-core'
       .plugin require 'pouchdb-adapter-http'
     LRU = require 'lru-cache'
     moment = require 'moment'

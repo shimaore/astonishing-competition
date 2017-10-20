@@ -4,7 +4,7 @@
 
     Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'
-    PouchDB = require 'pouchdb-core'
+    PouchDB = require 'shimaore-pouchdb-core'
       .plugin require 'pouchdb-adapter-http'
     LRU = require 'lru-cache'
 

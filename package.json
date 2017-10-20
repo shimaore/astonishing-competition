@@ -22,7 +22,7 @@
     "moment": "^2.18.1",
     "numbering-plans": "^2.5.2",
     "pouchdb-adapter-http": "^6.3.4",
-    "shimaore-pouchdb-core": "^6",
+    "shimaore-pouchdb-core": "^6.3.4",
     "seem": "^2.0.0",
     "tangible": "^1.8.3",
     "uuid": "^3.1.0"

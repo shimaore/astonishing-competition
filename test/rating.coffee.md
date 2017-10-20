@@ -2,7 +2,7 @@
     chai.should()
     seem = require 'seem'
     debug = (require 'tangible') "#{(require '../package').name}:middleware:rating"
-    PouchDB = require 'pouchdb-core'
+    PouchDB = require 'shimaore-pouchdb-core'
       .plugin require 'pouchdb-adapter-memory'
       .defaults adapter:'memory'
     describe 'rating', ->
