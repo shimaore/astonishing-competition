@@ -11,8 +11,8 @@
               sip_profiles:{}
               prefix_admin: ''
             session:{}
+            once: -> Promise.resolve null
             call:
-              once: -> Promise.resolve null
               emit: ->
             req:
               variable: -> null

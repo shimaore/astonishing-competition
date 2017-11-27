@@ -77,21 +77,21 @@ Carrier-side data
             debug: ->
               debug 'module', arguments...
             respond: ->
+            once: (event,resolve) ->
+              switch event
+                when 'cdr_report'
+                  ctx.session.cdr_report = billable: 32262
+                  setTimeout (-> resolve ctx.session.cdr_report), 5*1000
+
 
             call:
               event_json: -> Promise.resolve null
-              once: (event) ->
+              once: (event,resolve) ->
                 switch event
                   when 'CHANNEL_ANSWER'
-                    new Promise (resolve,reject) ->
-                      setTimeout resolve, 1*1000
+                    setTimeout resolve, 1*1000
                   when 'CHANNEL_HANGUP_COMPLETE'
-                    new Promise (resolve,reject) ->
-                      setTimeout resolve, 3*1000
-                  when 'cdr_report'
-                    new Promise (resolve,reject) ->
-                      ctx.session.cdr_report = billable: 32262
-                      setTimeout resolve, 5*1000
+                    setTimeout resolve, 3*1000
 
             save_trace: ->
 
