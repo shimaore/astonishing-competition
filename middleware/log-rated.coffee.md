@@ -1,5 +1,5 @@
     @name = "#{(require '../package').name}:middleware:log-rated"
-    debug = (require 'tangible') @name
+    {debug,hand,heal} = (require 'tangible') @name
     seem = require 'seem'
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
@@ -266,8 +266,8 @@ Compute and save CDR
 
       debug 'Setting handle_final'
 
-      handle_final = seem =>
-        duration = Math.ceil( parseInt(@session.cdr_report.billable,10) / seconds )
+      handle_final = seem (cdr_report) =>
+        duration = Math.ceil( parseInt(cdr_report.billable,10) / seconds )
 
         debug 'handle_final', duration
 
@@ -335,17 +335,14 @@ Put the CDR and trace in service
 Handle both the case where the call is over (sync)
 
       if @session.cdr_report?
-        yield handle_final()
-          .catch (error) ->
-            debug 'cdr_report', error.stack ? error.toString()
+        heal handle_final @session.cdr_report
 
 or in-progress (async)
 
       else
-        @call.once 'cdr_report'
-        .then (report) -> handle_final()
-        .catch (error) ->
-          debug 'cdr_report', error.stack ? error.toString()
+        @once 'cdr_report', (report) ->
+          heal handle_final report
+          return
 
       debug 'Ready'
 
@@ -427,8 +424,7 @@ Then, once the call is answered:
 
         yield @call.event_json 'CHANNEL_ANSWER', 'CHANNEL_HANGUP_COMPLETE'
 
-        @call.once 'CHANNEL_ANSWER'
-        .then seem =>
+        @call.once 'CHANNEL_ANSWER', hand =>
           debug 'CHANNEL_ANSWER'
           running = true
           start_time = moment.utc()
@@ -455,12 +451,12 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
 
           debug 'Call was hung up'
 
-        @call.once 'CHANNEL_HANGUP_COMPLETE'
-        .then =>
+        @call.once 'CHANNEL_HANGUP_COMPLETE', =>
           debug 'CHANNEL_HANGUP_COMPLETE'
           running = false
 
         @debug 'Rating ornament is ready.'
+        return
 
       return
 
