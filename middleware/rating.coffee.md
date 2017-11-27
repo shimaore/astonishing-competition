@@ -4,8 +4,7 @@
 
     Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'
-    PouchDB = require 'shimaore-pouchdb-core'
-      .plugin require 'pouchdb-adapter-http'
+    PouchDB = require 'ccnq4-pouchdb'
     LRU = require 'lru-cache'
 
 * cfg.rating (object, optional) parameters for the rating of calls
