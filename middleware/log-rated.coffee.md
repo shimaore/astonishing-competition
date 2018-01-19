@@ -21,9 +21,9 @@ Save remotely by default, fallback to
         debug 'Dispose of', key
         value?.close?()
 
-    Aggregator = require '../aggregation'
-    Runner = require '../runner'
+    {PublicExecutor,PrivateExecutor,Counters,Runner} = require '../runner'
     {conditions} = require '../commands'
+    {get_ornaments} = require '../get_ornaments'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
       now = moment.utc()
@@ -220,16 +220,18 @@ The databases can be deleted after whatever time interval is convenient in terms
 
 We're saving three objects per call, in four different databases.
 
-Client object
--------------
+Client setup
+------------
 
 A rated and aggregated `client` object, used for billing, saved into the rated-databases.
 
 ### Before the call starts.
 
-      if @session.rated.client?
+      client_cdr = @session.rated.client
 
-        @debug 'Preprocessing client'
+      if client_cdr?
+
+        @debug 'Preprocessing client', client_cdr
 
 We assume that invoices are generated at the `account` level.
 
@@ -250,11 +252,18 @@ Counters at the sub-account level.
 
         counters_id = ['counters',sub_account,client_period].join '-'
 
-        yield period_db
+        counters_db = period_db
+
+        yield counters_db
           .put _id: counters_id
           .catch -> yes
 
-        client_aggregator = new Aggregator plans_db, period_db, counters_id, @session.rated.client
+        client_counters = new Counters counters_db, counters_id
+
+        public_ornaments = get_ornaments plans_db, client_cdr
+        public_executor = new PublicExecutor public_ornaments
+
+        client_aggregator = new Runner client_counters, public_executor
 
       else
 
@@ -270,10 +279,9 @@ Compute and save CDR
 
         debug 'handle_final', duration
 
-        if client_execute?
-          yield client_execute duration
-            .catch (error) =>
-              debug "client_execute: #{error.stack ? error}"
+        yield incall_execute? duration
+          .catch (error) =>
+            debug "incall_execute: #{error.stack ? error}"
 
 For the client
 --------------
@@ -283,14 +291,14 @@ For the client
           debug 'handle_final: client'
           try
 
-            cdr = yield client_aggregator.handle duration
+            cdr = yield client_aggregator.evaluate client_cdr, duration
 
             if cdr?
               cdr.processed = true
             else
               debug 'CDR could not be processed.'
 
-              cdr = @session.rated.client?.toJSON() ? {}
+              cdr = client_cdr?.toJSON() ? {}
               cdr.processed = false
 
             cdr.trace_id = @session._id
@@ -304,12 +312,13 @@ Do not store CDRs for calls that must be hidden (e.g. emergency calls in most ju
           catch error
             debug "safely_write client: #{error.stack ? error}", period_database
 
-Carrier object
---------------
+For the carrier
+---------------
 
 A rated `carrier` object, saved into the rated-database for the carrier.
 
-        if @session.rated.carrier?
+        carrier_cdr = @session.rated.carrier
+        if carrier_cdr?
 
           debug 'handle_final: carrier'
 
@@ -317,8 +326,8 @@ A rated `carrier` object, saved into the rated-database for the carrier.
           carrier_period = @cfg.period_for_carrier @session.rated
           carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
 
-          @session.rated.carrier.compute duration
-          cdr = @session.rated.carrier.toJSON()
+          carrier_cdr.compute duration
+          cdr = carrier_cdr.toJSON()
           cdr.trace_id = @session._id
 
           try
@@ -346,13 +355,13 @@ or in-progress (async)
       debug 'Ready'
 
 Rating ornament
----------------
+===============
 
 * doc.endpoint.rating_ornaments (ornaments) used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
 
-      ornaments = @session.rated.params.client?.rating_ornaments
-      if ornaments?
-        @debug 'Processing rating ornaments.'
+      private_ornaments = @session.rated.params.client?.rating_ornaments
+      if private_ornaments?
+        @debug 'Processing (private) rating ornaments.'
 
         if not client_aggregator?
           @debug.csr 'No aggregator available.'
@@ -363,51 +372,36 @@ Rating ornament
         for own k,v of conditions
           @ornaments_commands[k] = v
 
-        client_runner = new Runner period_db, counters_id, @ornaments_commands
-        client_runner.ornaments = ->
-          ornaments
+        private_executor = new PrivateExecutor private_ornaments, @ornaments_commands
+        private_runner = new Runner client_counters, private_executor
 
-        runner_cdr = {}
+The client's rating-ornaments (defined in the endpoint) are executed multiple times during the call.
 
-Execute the call decision script at the given duration point.
+### Definition
 
-        client_execute = seem (duration) =>
+        private_cdr = {}
 
-          debug 'client_execute', duration
+        incall_execute = seem (duration) ->
 
-First compute the CDR at that time point.
+          debug 'incall_execute', duration
 
-          cdr = yield client_aggregator.handle duration
-          for own k,v of cdr
-            runner_cdr[k] = v
+Compute the CDR at that point in time.
 
-Note: not all ornament-commands (especially the ones defined in huge-play) are applicable to all calls.
+          incall_cdr = yield client_aggregator.evaluate client_cdr, duration
+          for own k,v of incall_cdr
+            private_cdr[k] = v
 
-Next, evaluate the client decision code as well.
+Then evaluate the client decision code.
 
-          client_runner.context = (cdr,counters) =>
-            @cdr = cdr
-            @counters = counters
-            this
+          yield private_runner.run private_cdr, duration
 
-          yield client_runner.run runner_cdr
-
-          delete @cdr
-          delete @counters
-
-          debug 'client_execute completed', duration
-
-        initial_duration = @session.rated.client?.rating_data?.initial?.duration
-        if not initial_duration? or initial_duration is 0
-          initial_duration = @session.rated.client?.rating_data?.subsequent?.duration
-
-        if not initial_duration?
-          @debug.csr 'No initial duration available'
-          yield @respond '500 no initial duration available'
-          @direction 'failed'
+          debug 'incall_execute completed', duration
           return
 
-* doc.endpoint.rating_inverval (integer) Interval at which to re-evaluate the call for continuation. Defaults: cfg.rating_interval, 20s otherwise.
+### Execution
+
+* doc.endpoint.rating_inverval (integer) Interval at which to re-evaluate the call for continuation. Default: cfg.rating_interval, 20s otherwise.
+* cfg.rating_inverval (integer) The default value for doc.endpoint.rating_interval. Default: 20s.
 
         interval = @session.rated.params.client?.rating_interval
         interval ?= @cfg.rating_interval
@@ -415,15 +409,25 @@ Next, evaluate the client decision code as well.
 
 Execute the script a first time when the call is routing / in-progress.
 
-        yield client_execute initial_duration
+        initial_duration = client_cdr?.rating_data?.initial?.duration
+        if not initial_duration? or initial_duration is 0
+          initial_duration = client_cdr?.rating_data?.subsequent?.duration
 
-Then, once the call is answered:
+        if not initial_duration?
+          @debug.csr 'No initial duration available'
+          yield @respond '500 no initial duration available'
+          @direction 'failed'
+          return
+
+        yield incall_execute initial_duration
+
+Aterwards, we wait for the call to be answered.
 
         running = false
 
         yield @call.event_json 'CHANNEL_ANSWER', 'CHANNEL_HANGUP_COMPLETE'
 
-        @call.once 'CHANNEL_ANSWER', hand =>
+        on_answer = hand =>
           debug 'CHANNEL_ANSWER'
           running = true
           start_time = moment.utc()
@@ -431,11 +435,13 @@ Then, once the call is answered:
 - Execute the script a second time at the time the call is actually answered (things might have changed while the call was making progress and/or being routed).
 
           end_of_interval = initial_duration
-          yield client_execute end_of_interval
+          yield incall_execute end_of_interval
 
-- After that, do a first check at the end of the initial-duration, then once for every interval.
+- After that, do a first check at the end of the initial-duration period,
 
           yield sleep_until start_time.clone().add seconds: end_of_interval
+
+  then once for every rating interval.
 
           while running
 
@@ -443,19 +449,19 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
 (In other words, we attempt to maintain the invariant implemented by `rating_ornaments`.)
 
             end_of_interval += interval
-            yield client_execute end_of_interval
+            yield incall_execute end_of_interval
             yield sleep_until start_time.clone().add seconds: end_of_interval
 
-          period_db = null
-
           debug 'Call was hung up'
+
+        @call.once 'CHANNEL_ANSWER', on_answer
 
         @call.once 'CHANNEL_HANGUP_COMPLETE', =>
           debug 'CHANNEL_HANGUP_COMPLETE'
           running = false
+          counters_db = period_db = null
 
-        @debug 'Rating ornament is ready.'
-        return
+        @debug '(Private) rating ornament is ready.'
 
       return
 
