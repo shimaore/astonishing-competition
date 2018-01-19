@@ -313,21 +313,23 @@ The actual semantics here are "call is free _up-to_ {the values specified previo
         action: ->
           'over'
 
-    @rate = {}
+    rate = {}
     for own k,v of commands
-      @rate[k] = v.condition ? v.action
+      rate[k] = v.condition ? v.action
 
-    @names = {}
+    names = {}
     for own k,v of commands
-      @names[k] = v.name
+      names[k] = v.name
 
 Used for start-of-call and mid-call conditions.
 
-    @conditions = {}
+    conditions = {}
     for own k,v of commands
-      @conditions[k] = v.condition ? v.action
-    @conditions.hangup = seem ->
+      conditions[k] = v.condition ? v.action
+    conditions.hangup = seem ->
       yield @respond '402 rating limit'
       yield @action 'hangup', '402 rating limit'
       @direction 'rejected'
       'over'
+
+    module.exports = {rate,names,conditions}
