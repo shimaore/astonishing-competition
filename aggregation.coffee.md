@@ -28,7 +28,7 @@ The Aggregator is used to run the plan's actual billing code.
       handle: (duration) ->
         @evaluate @cdr, duration
 
-      ornaments: (cdr) ->
+      ornaments: seem (cdr) ->
 
 Memoize
 

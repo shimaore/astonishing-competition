@@ -27,7 +27,7 @@ This allows customer code to access the billing counters / state if needed, main
 
       execute: seem (cdr,counters) ->
 
-        ornaments = @ornaments cdr
+        ornaments = yield @ornaments cdr
         return unless ornaments?
 
         debug 'execute', ornaments
