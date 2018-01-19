@@ -92,6 +92,7 @@ Carrier-side data
                     setTimeout resolve, 1*1000
                   when 'CHANNEL_HANGUP_COMPLETE'
                     setTimeout resolve, 3*1000
+              removeListener: ->
 
             save_trace: ->
 

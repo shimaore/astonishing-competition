@@ -458,6 +458,7 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
 
         @call.once 'CHANNEL_HANGUP_COMPLETE', =>
           debug 'CHANNEL_HANGUP_COMPLETE'
+          @call.removeListener 'CHANNEL_ANSWER', on_answer
           running = false
           counters_db = period_db = null
 
