@@ -4,7 +4,7 @@
   "description": "CDR rating and aggregation (pre-invoicing) for CCNQ4",
   "main": "index.js",
   "scripts": {
-    "prepublishOnly": "npm install --only=dev && rm package-lock.json && coffee -c -M *.coffee.md middleware/*.coffee.md",
+    "prepublishOnly": "npm install --only=dev && rm package-lock.json && coffee -c *.coffee.md middleware/*.coffee.md",
     "pretest": "npm install && npm install --only=dev",
     "test": "mocha"
   },
