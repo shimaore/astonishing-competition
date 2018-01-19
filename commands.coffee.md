@@ -297,7 +297,8 @@ The actual semantics here are "call is free _up-to_ {the values specified previo
         action: ->
           if @cdr.up_to? and @cdr.duration > @cdr.up_to
             rated = new Rated @cdr
-            rated.compute @cdr.duration-@cdr.up_to
+            rated.duration = @cdr.duration-@cdr.up_to
+            rated.compute()
             @cdr.actual_amount = rated.actual_amount
           else
             @cdr.actual_amount = 0
