@@ -16,7 +16,7 @@
   "dependencies": {
     "bluebird": "^3.5.1",
     "ccnq4-pouchdb": "^1.0.0",
-    "entertaining-crib": "^4.0.1",
+    "entertaining-crib": "^5.0.1",
     "flat-ornament": "^3.1.0",
     "lru-cache": "^4.1.1",
     "marked-summer": "^1.0.3",

@@ -122,6 +122,8 @@ Accept billable calls.
             duration: 1
         rating:
           plan: false
+        per: 60
+        divider: 1
 
       @debug 'session.rated', @session.rated
 

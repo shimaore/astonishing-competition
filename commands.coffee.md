@@ -296,11 +296,7 @@ The actual semantics here are "call is free _up-to_ {the values specified previo
           'fr-FR': "l'appel est gratuit"
         action: ->
           if @cdr.up_to? and @cdr.duration > @cdr.up_to
-            cdr =
-              rating_data: @cdr.rating_data
-              per: @cdr.per
-              divider: @cdr.divider
-            rated = new Rated cdr
+            rated = new Rated @cdr
             rated.compute @cdr.duration-@cdr.up_to
             @cdr.actual_amount = rated.actual_amount
           else
