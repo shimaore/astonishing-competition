@@ -10,14 +10,7 @@
     class Runner
       constructor: (@counters_db,@counters_id,@commands = rate) ->
 
-      ornaments: (cdr) -> []
-
       is_private: -> true
-
-      context: (cdr,counters) ->
-        ctx =
-          cdr: cdr
-          counters: counters
 
 Execute the ornaments, handling private changes to counters
 -----------------------------------------------------------
@@ -25,12 +18,9 @@ Execute the ornaments, handling private changes to counters
 Private changes are saved in the counters, but do not update the `official` counters (i.e. those used for billing).
 This allows customer code to access the billing counters / state if needed, maintain their own counters, without interfering with billing.
 
-      execute: seem (cdr,counters) ->
+      execute: seem (cdr,counters,ornaments) ->
 
-        ornaments = yield @ornaments cdr
-        return unless ornaments?
-
-        debug 'execute', ornaments
+        debug 'execute', {cdr,counters,ornaments}
 
 If we are executing untrusted code,
 
@@ -53,9 +43,9 @@ and re-inject the private values into a new record.
             counters[k] = v
           delete counters.PRIVATE_COUNTERS
 
-        ctx = @context cdr, counters
+        ctx = { cdr, counters }
 
-        debug 'run'
+        debug 'execute: run'
 
         yield run.call ctx, ornaments, @commands
 
@@ -79,9 +69,9 @@ and restore the former values.
 Run code for a given CDR, loading and saving counters
 -----------------------------------------------------
 
-      run: seem (cdr) ->
+      run: seem (cdr,ornaments) ->
 
-        debug 'run', cdr
+        debug 'run', cdr, ornaments
 
 It's very important that the billing-db be created with a `counters` record.
 
@@ -89,7 +79,7 @@ It's very important that the billing-db be created with a `counters` record.
         while not ok
           counters = yield @counters_db.get @counters_id
 
-          yield @execute cdr, counters
+          yield @execute cdr, counters, ornaments
 
           ok = true
           counters._id = @counters_id
@@ -105,15 +95,15 @@ If the counters were modified while we were computing, do another loop.
 
         cdr.counters = counters
 
-        debug 'run completed', cdr
+        debug 'run completed', cdr, ornaments
         return
 
 Generate and evaluate a new CDR
 -------------------------------
 
-      evaluate: seem (cdr,duration) ->
+      evaluate: seem (cdr,duration,ornaments) ->
 
-        debug 'handle', duration
+        debug 'evaluate', cdr, duration
 
 For each step we compute the new values at the specified point-in-time.
 Note: we must build a new `Rated` object since its duration can only be set once.
@@ -130,7 +120,7 @@ But, conversely, in a prepaid situation, the code running multiple times for the
         for own k,v of cdr when k[0] isnt '_'
           working_cdr[k] = v
 
-        yield @run working_cdr
+        yield @run working_cdr, ornaments
 
 The billing rules may not modify values in the original, rated CDR,
 nor the copy we send back.
@@ -138,7 +128,7 @@ nor the copy we send back.
         for own k,v of working_cdr when k[0] isnt '_'
           cdr[k] = v
 
-        debug 'handle completed', cdr
+        debug 'evaluate completed', cdr
 
         cdr
 

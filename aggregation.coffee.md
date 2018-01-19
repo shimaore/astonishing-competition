@@ -15,9 +15,9 @@ Aggregator
 
 The Aggregator is used to run the plan's actual billing code.
 
-    class Aggregator extends Runner
+    class Aggregator
       constructor: (@plans_db,counters_db,counters_id,@cdr,commands) ->
-        super counters_db, counters_id, commands
+        @runner = new Runner counters_db, counters_id, commands
 
       is_private: -> false
 
@@ -25,10 +25,12 @@ The Aggregator is used to run the plan's actual billing code.
 * doc.plan Description of a billing plan.
 * doc.plan.ornaments The [`flat-ornaments`](#pkg.flat-ornaments) implementation of the billing plan, using the commands described in the [`astonishing-competition`](#pkg.astonishing-competition) package.
 
-      handle: (duration) ->
-        @evaluate @cdr, duration
+      handle: seem (duration) ->
+        ornaments = yield @ornaments()
+        return unless ornaments?
+        yield @runner.evaluate @cdr, duration, ornaments
 
-      ornaments: seem (cdr) ->
+      ornaments: seem ->
 
 Memoize
 
@@ -36,13 +38,13 @@ Memoize
 
 Special value: the rating plan might be `false`, indicating no plan aggregation code should be loaded (but aggregation should still succeed).
 
-        if cdr?.rating?.plan is false
+        if @cdr?.rating?.plan is false
           return @__ornaments = []
 
 Otherwise, get the list of ornaments from the billing plan.
 
         doc = yield @plans_db
-          .get "plan:#{cdr.rating.plan}"
+          .get "plan:#{@cdr.rating.plan}"
           .catch -> null
 
         unless doc?
