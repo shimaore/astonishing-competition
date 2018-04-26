@@ -35,6 +35,8 @@
 
     @include = seem ->
 
+      return unless @session?
+
 * session.rated.client (Rated object from entertaining-crib) rating object, client-side
 * session.rated.carrier (Rated object from entertaining-crib) rating object, carrier-side
 
