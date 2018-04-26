@@ -185,6 +185,10 @@ Call handler
 
       @debug 'Start'
 
+      unless @session?
+        heal @action 'respond', '500 No session, unable to rate'
+        return
+
 Prevent calls from going through if we won't be able to rate / save them.
 
       unless plans_db and (RemotePouchDB? or LocalPouchDB?)
@@ -194,7 +198,7 @@ Prevent calls from going through if we won't be able to rate / save them.
           @direction 'failed'
         return
 
-      unless @session?.rated?
+      unless @session.rated?
         @debug 'No session.rated'
         yield @respond '500 Unable to rate'
         @direction 'failed'
