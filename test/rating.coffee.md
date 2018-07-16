@@ -1,6 +1,5 @@
     chai = require 'chai'
     chai.should()
-    seem = require 'seem'
     debug = (require 'tangible') "#{(require '../package').name}:middleware:rating"
     PouchDB = require 'shimaore-pouchdb-core'
       .plugin require 'pouchdb-adapter-memory'
@@ -14,7 +13,7 @@
         day = new Date().toJSON()[0...10]
 
         seen = 0
-        p = seem ->
+        p = ->
           trigger = null
           ctx =
             cfg:
@@ -103,13 +102,13 @@ Carrier-side data
           ctx.cfg.should.have.property 'rating'
 
           db = new PouchDB 'rates-client+current'
-          yield db.put
+          await db.put
             _id:'configuration'
             currency: 'EUR'
             divider: 1
             per: 60
             ready: true
-          yield db.put
+          await db.put
             _id:'prefix:1800'
             initial:
               cost: 4
@@ -119,13 +118,13 @@ Carrier-side data
               duration: 60
           db.close()
           db = new PouchDB 'rates-carrier+current'
-          yield db.put
+          await db.put
             _id:'configuration'
             currency: 'EUR'
             divider: 1
             per: 60
             ready: true
-          yield db.put
+          await db.put
             _id:'prefix:1800'
             initial:
               cost: 0
@@ -136,8 +135,8 @@ Carrier-side data
           db.close()
 
           debug 'include'
-          yield m1.include.call ctx, ctx
-          yield m2.include.call ctx, ctx
+          await m1.include.call ctx, ctx
+          await m2.include.call ctx, ctx
           debug 'include returned', ctx
           ctx.should.have.property 'session'
           ctx.session.should.have.property 'rated'

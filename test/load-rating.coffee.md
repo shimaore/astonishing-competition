@@ -1,7 +1,7 @@
     describe 'Modules', ->
       list = [
-          'middleware/rating.coffee.md'
-          'middleware/log-rated.coffee.md'
+          'middleware/rating'
+          'middleware/log-rated'
         ]
 
       unit = (m) ->

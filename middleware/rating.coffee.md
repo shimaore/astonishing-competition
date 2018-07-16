@@ -1,6 +1,5 @@
     pkg = require '../package.json'
     @name = "#{pkg.name}:middleware:rating"
-    seem = require 'seem'
 
     Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'
@@ -33,7 +32,7 @@
             @cfg.rating?.tables
       @debug 'server_pre: Ready'
 
-    @include = seem ->
+    @include = ->
 
       return unless @session?
 
@@ -53,7 +52,7 @@
       @debug 'Client is ', params.client?._id
       @debug 'Carrier is ', params.carrier?._id
 
-      @session.rated = yield @cfg.rating
+      @session.rated = await @cfg.rating
         .rate params
         .catch (error) =>
           @debug "rating_rate failed: #{error.stack ? error}"
@@ -102,7 +101,7 @@ Reject non-billable (client-side) calls otherwise.
             else
 
               @debug 'Unable to rate', @session.dialplan
-              yield @respond '500 Unable to rate'
+              await @respond '500 Unable to rate'
               @direction 'unable-to-rate'
               return
 

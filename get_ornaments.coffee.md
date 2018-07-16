@@ -7,9 +7,7 @@ A billable CDR is one onto which billing rules have been applied. These rules ma
 
 Restrictions and constraints are stored alongside the billable CDRs in a `counters` record. The record may be manipulated by the aggregation code following CouchDB rules (which means 409 errors are expected and should be handled appropriately), and each update MUST reference the CDR that caused the change in the `counters` record, while each CDR MUST be updated with the content of the `counters` record. Those two last constraints allow to rebuild the entire history of the counters record, the CDRs acting as as linked list.
 
-    seem = require 'seem'
-
-    get_ornaments = seem (plans_db,cdr) ->
+    get_ornaments = (plans_db,cdr) ->
 
 Special value: the rating plan might be `false`, indicating no plan aggregation code should be loaded (but aggregation should still succeed).
 
@@ -18,7 +16,7 @@ Special value: the rating plan might be `false`, indicating no plan aggregation 
 
 Otherwise, get the list of ornaments from the billing plan.
 
-      doc = yield plans_db
+      doc = await plans_db
         .get "plan:#{cdr.rating.plan}"
         .catch -> null
 
