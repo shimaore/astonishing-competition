@@ -58,7 +58,7 @@ A proper 'Rated' CDR should have a `connect_stamp` field.
 
       period = period_name period
 
-Cache
+Cache/memoize
 
       cdr.period ?= {}
       if cdr.period[period]?
@@ -69,7 +69,7 @@ Cache
         .format period
 
     counter_period = ( counter, cdr, period ) ->
-      [counter,'---',cdr_period cdr, period].join ' '
+      [counter,'PER',cdr_period cdr, period].join ' '
 
 Once per call
 -------------
@@ -92,6 +92,13 @@ The operation might be sync or async.
       @cdr[name] = value
       if value > previous_value
         cb value - previous_value
+
+Commands
+========
+
+The following commands are meant to be executed in the context of this module's runner; that context currently contains:
+- `cdr` — some CDR data, which can be freely modified by the code (changes are thrown away at the end of the call)
+- `setup_counter`, `update_counter`, and `get_counter`, bound to a specific sub-account and context.
 
     commands =
 
@@ -373,4 +380,4 @@ Actions
     for own k,v of commands
       names[k] = v.name
 
-    module.exports = {rate,names}
+    module.exports = {rate,names,counter_period}

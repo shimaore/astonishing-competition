@@ -21,7 +21,7 @@ Save remotely by default, fallback to
         value?.close?()
 
     {Executor,Runner} = require '../runner'
-    {rate} = require '../commands'
+    {rate,counter_period} = require '../commands'
     {get_ornaments} = require '../get_ornaments'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
@@ -252,7 +252,7 @@ Counters at the sub-account level.
 
         counters_prefix = ['counters',sub_account,client_period].join ' '
 
-        client_executor = new Executor counters_prefix, rate
+        client_executor = new Executor "C #{counters_prefix}", rate
         client_runner = new Runner client_executor, blue_ring
 
       else
@@ -353,6 +353,7 @@ Rating ornament
 Ornaments might be set on the endpoint to add decisions as to whether the call should proceed or not, or be interrupted at some point.
 
 * doc.endpoint.rating_ornaments (ornaments) used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
+* doc.endpoint.rating_values (hash) used in doc.endpoint.rating_ornaments code by the `at_most_value` function to take decisions based on endpoint-specific parameters (for example to set a per-endpoint maximum amount of money to spend per billing period).
 
       private_ornaments = @session.rated.params.client?.rating_ornaments
       if private_ornaments?
@@ -364,17 +365,44 @@ Ornaments might be set on the endpoint to add decisions as to whether the call s
           @direction 'failed'
           return
 
-        extra_commands =
+In the rating ornaments are available all the commands used for rating, plus a few commands that can be used to influence the call state (`hangup`) or retrieve data that is not otherwise available to the regular rating code.
+
+        {rating_values} = @session.rated.params.client
+        rating_values ?= {}
+
+        private_commands =
+
+Hangs the call up.
+
           hangup: =>
             await @respond '402 rating limit'
             await @action 'hangup', '402 rating limit'
             @direction 'rejected'
             'over'
 
+Counter condition
+- per billing period
+
+          at_most_value: (maximum_name,counter) ->
+            maximum = rating_values[maximum_name]
+            return false unless maximum?
+            return false unless 'number' is typeof maximum
+            return false if isNaN maximum
+            [coherent,value] = await @get_counter counter
+            value <= maximum
+
+- per other period (`day` etc.)
+
+          at_most_value_per: (maximum_name,counter,period) ->
+            name = counter_period counter, @cdr, period
+            private_commands.at_most_value.call this, maximum_name, name
+
+        Object.assign private_commands, rate
+
 Private changes are saved in the counters, but do not update the "official" counters (i.e. those used for billing).
 This allows customer code to maintain their own counters, without interfering with billing.
 
-        private_executor = new Executor "_P_ #{counters_prefix}", Object.assign extra_commands, rate
+        private_executor = new Executor "P #{counters_prefix}", private_commands
         private_runner = new Runner private_executor, blue_ring
 
 The client's rating-ornaments (defined in the endpoint) are executed multiple times during the call.
@@ -391,10 +419,11 @@ Compute the CDR at that point in time.
 
           incall_cdr = await private_runner.evaluate plan_ornaments, client_cdr, duration
 
-Then execute the client decision code.
+Then execute the decision code on the updated CDR.
 
-          Object.assign private_cdr, incall_cdr
-          await private_runner.run private_ornaments, private_cdr, duration
+          unless cdr.hide_call
+            Object.assign private_cdr, incall_cdr
+            await private_runner.run private_ornaments, private_cdr
 
           debug 'incall_execute completed', duration
           return
