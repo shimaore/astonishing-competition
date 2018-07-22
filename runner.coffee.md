@@ -28,8 +28,8 @@ Execute the ornaments
     class Runner
       constructor: (@executor,@br) ->
 
-Run code for a given CDR, loading and saving counters
------------------------------------------------------
+Run code for a given CDR
+------------------------
 
       run: (ornaments,cdr) ->
 
