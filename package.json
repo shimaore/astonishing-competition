@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "npm install --only=dev && rm package-lock.json && coffee -c *.coffee.md middleware/*.coffee.md",
+    "build": "npm install --only=dev && rm package-lock.json && coffee -c *.coffee.md middleware/*/*.coffee.md && jison -m commonjs cgu-fr.jison",
     "pretest": "npm run build && coffee -c test/*.coffee.md",
     "test": "mocha"
   },
