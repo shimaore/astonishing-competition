@@ -17,7 +17,7 @@ Execute the ornaments
 
         ctx = {
           cdr
-          setup_counter: (name) -> br.setup_counter (pr name), default_expire()
+          setup_counter: (name,expire) -> br.setup_counter (pr name), expire ? default_expire()
           update_counter: (name,value) -> br.update_counter (pr name), value
           get_counter: (name) -> br.get_counter (pr name)
         }
