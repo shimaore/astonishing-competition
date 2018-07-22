@@ -1,16 +1,17 @@
     @name = "#{(require '../package').name}:middleware:in-call"
     {debug,hand,heal} = (require 'tangible') @name
     PouchDB = require 'ccnq4-pouchdb'
+    BlueRings = require 'blue-rings'
     moment = require 'moment'
     assert = require 'assert'
     uuid = require 'uuid'
 
     plans_db = null
 
-    {Executor,Runner} = require '../runner'
-    {rate,counter_period} = require '../commands'
-    {get_ornaments} = require '../get_ornaments'
-    huge_play_commands = require 'huge-play/middleware/client/commands'
+    {Executor} = require '../runner'
+    {rate,counter_period} = require '../../commands'
+    {get_ornaments} = require '../../get_ornaments'
+    compile = require '../../compile'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
       now = moment.utc()
@@ -22,6 +23,8 @@
 Compute period
 
     @server_pre = ->
+
+      @cfg.br = BlueRings @cfg.blue_rings
 
       if @cfg.aggregation?.plans?
         plans_db = new PouchDB @cfg.aggregation.plans
@@ -120,22 +123,20 @@ Ornaments might be set on the endpoint to add decisions as to whether the call s
 * doc.endpoint.rating_ornaments (ornaments) used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
 * doc.endpoint.rating_values (hash) used in doc.endpoint.rating_ornaments code by the `at_most_value` function to take decisions based on endpoint-specific parameters (for example to set a per-endpoint maximum amount of money to spend per billing period).
 
-      private_ornaments = @session.rated.params.client?.rating_ornaments
+      endpoint = @session.rated.params.client
+      private_ornaments = endpoint?.rating_ornaments
       if private_ornaments?
         @debug 'Processing (private) rating ornaments.'
-
-        if not client_runner?
-          @debug.csr 'No aggregator available.'
-          await @respond '500 no aggregator available'
-          @direction 'failed'
-          return
 
 In the rating ornaments are available all the commands used for rating, plus a few commands that can be used to influence the call state (`hangup`) or retrieve data that is not otherwise available to the regular rating code.
 
         {rating_values} = @session.rated.params.client
         rating_values ?= {}
 
-        private_commands =
+Note that `@ornaments_commands` is the standard `huge-play` set.
+We need to map the functions because they are not bound to the call by `huge-play`, and need access to the call (they cannot use the context created by the Runner).
+
+        private_commands = Object.assign {}, @ornaments_commands.map( (f) => f.bind this ), rate,
 
 Hangs the call up.
 
@@ -162,13 +163,13 @@ Counter condition
             name = counter_period counter, @cdr, period
             private_commands.at_most_value.call this, maximum_name, name
 
-        Object.assign private_commands, rate, huge_play_commands
+        private_fun = compile private_ornaments, private_commands
+        plan_fun = compile plan_ornaments, private_commands
 
 Private changes are saved in the counters, but do not update the "official" counters (i.e. those used for billing).
 This allows customer code to maintain their own counters, without interfering with billing.
 
-        private_executor = new Executor "P #{counters_prefix}", private_commands
-        private_runner = new Runner private_executor, blue_ring
+        private_executor = new Executor "P #{counters_prefix}", private_commands, @cfg.br
 
 The client's rating-ornaments (defined in the endpoint) are executed multiple times during the call.
 
@@ -182,13 +183,13 @@ The client's rating-ornaments (defined in the endpoint) are executed multiple ti
 
 Compute the CDR at that point in time.
 
-          incall_cdr = await private_runner.evaluate plan_ornaments, client_cdr, duration
+          incall_cdr = await private_executor.evaluate plan_fun, client_cdr, duration
 
 Then execute the decision code on the updated CDR.
 
           unless cdr.hide_call
             Object.assign private_cdr, incall_cdr
-            await private_runner.run private_ornaments, private_cdr
+            await private_executor.run private_fun, private_cdr
 
           debug 'incall_execute completed', duration
           return

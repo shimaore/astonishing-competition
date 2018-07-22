@@ -8,42 +8,26 @@ Execute the ornaments
 ---------------------
 
     class Executor
-      constructor: (@prefix,@commands) ->
+      constructor: (@prefix,@commands,@br) ->
 
-      execute: (ornaments,cdr,br) ->
+      run: (fun,cdr) ->
         debug 'Executor::execute', {cdr}
 
         pr = (name) -> "#{@prefix} #{name}"
 
         ctx = {
           cdr
-          setup_counter: (name,expire) -> br.setup_counter (pr name), expire ? default_expire()
-          update_counter: (name,value) -> br.update_counter (pr name), value
-          get_counter: (name) -> br.get_counter (pr name)
+          setup_counter: (name,expire) => @br.setup_counter (pr name), expire ? default_expire()
+          update_counter: (name,value) => @br.update_counter (pr name), value
+          get_counter: (name) => @br.get_counter (pr name)
         }
-        await run.call ctx, ornaments, @commands
-        return
-
-
-    class Runner
-      constructor: (@executor,@br) ->
-
-Run code for a given CDR
-------------------------
-
-      run: (ornaments,cdr) ->
-
-        debug 'run', cdr
-
-        await @executor.execute ornaments, cdr, @br
-
-        debug 'run completed', cdr
+        await fun.call ctx
         return
 
 Generate and evaluate a new CDR
 -------------------------------
 
-      evaluate: (ornaments,cdr,duration) ->
+      evaluate: (fun,cdr,duration) ->
 
         debug 'evaluate', cdr, duration
 
@@ -62,7 +46,7 @@ But, conversely, in a prepaid situation, the code running multiple times for the
         for own k,v of cdr when k[0] isnt '_'
           working_cdr[k] = v
 
-        await @run ornaments, working_cdr
+        await @evaluate fun, working_cdr
 
 The billing rules may not modify values in the original, rated CDR,
 nor the copy we send back.
