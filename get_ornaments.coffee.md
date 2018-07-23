@@ -23,9 +23,8 @@ Otherwise, get the list of ornaments from the billing plan.
       unless doc?
         return null
 
-      {ornaments} = doc
-
-      ornaments
+      {ornaments,script} = doc
+      script ? ornaments
 
 The Aggregator is used to run the plan's actual billing code.
 
