@@ -103,7 +103,7 @@ A rated and aggregated `client` object, used for billing, saved into the rated-d
 
       @debug 'Preprocessing client', client_cdr
 
-      plan_ornaments = await get_ornaments plans_db, client_cdr
+      plan_script = await get_ornaments plans_db, client_cdr
 
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
@@ -120,18 +120,18 @@ Rating ornament
 
 Ornaments might be set on the endpoint to add decisions as to whether the call should proceed or not, or be interrupted at some point.
 
-* doc.endpoint.rating_ornaments (ornaments) used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
-* doc.endpoint.rating_values (hash) used in doc.endpoint.rating_ornaments code by the `at_most_value` function to take decisions based on endpoint-specific parameters (for example to set a per-endpoint maximum amount of money to spend per billing period).
+* doc.endpoint.incall_script used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
+* doc.endpoint.incall_values (hash) used in doc.endpoint.incall code as parameters; for example it is used by the `at_most_value` function to take decisions based on endpoint-specific parameters (for example to set a per-endpoint maximum amount of money to spend per billing period).
 
       endpoint = @session.rated.params.client
-      private_ornaments = endpoint?.rating_ornaments
-      if private_ornaments?
-        @debug 'Processing (private) rating ornaments.'
+      private_script = endpoint?.incall_script
+      private_script ?= endpoint?.rating_ornaments # legacy
 
-In the rating ornaments are available all the commands used for rating, plus a few commands that can be used to influence the call state (`hangup`) or retrieve data that is not otherwise available to the regular rating code.
+      if private_script?
+        @debug 'Processing (private) in-call script.'
 
-        {rating_values} = @session.rated.params.client
-        rating_values ?= {}
+        {incall_values} = @session.rated.params.client
+        incall_values ?= {}
 
 Note that `@ornaments_commands` is the standard `huge-play` set.
 We need to map the functions because they are not bound to the call by `huge-play`, and need access to the call (they cannot use the context created by the Runner).
@@ -141,8 +141,8 @@ We need to map the functions because they are not bound to the call by `huge-pla
 Hangs the call up.
 
           hangup: =>
-            await @respond '402 rating limit'
-            await @action 'hangup', '402 rating limit'
+            await @respond '402 in-call restriction'
+            await @action 'hangup', '402 in-call restriction'
             @direction 'rejected'
             'over'
 
@@ -150,7 +150,7 @@ Counter condition
 - per billing period
 
           at_most_value: (maximum_name,counter) ->
-            maximum = rating_values[maximum_name]
+            maximum = incall_values[maximum_name]
             return false unless maximum?
             return false unless 'number' is typeof maximum
             return false if isNaN maximum
@@ -163,15 +163,15 @@ Counter condition
             name = counter_period counter, @cdr, period
             private_commands.at_most_value.call this, maximum_name, name
 
-        private_fun = compile private_ornaments, private_commands
-        plan_fun = compile plan_ornaments, private_commands
+        private_fun = try compile private_script, private_commands
+        private_fun ?= ->
+        plan_fun = try compile plan_script, private_commands
+        plan_fun ?= ->
 
 Private changes are saved in the counters, but do not update the "official" counters (i.e. those used for billing).
 This allows customer code to maintain their own counters, without interfering with billing.
 
         private_executor = new Executor "P #{counters_prefix}", private_commands, @cfg.br
-
-The client's rating-ornaments (defined in the endpoint) are executed multiple times during the call.
 
 ### Definition
 
@@ -196,11 +196,11 @@ Then execute the decision code on the updated CDR.
 
 ### Execution
 
-* doc.endpoint.rating_inverval (integer) Interval at which to re-evaluate the call for continuation. Default: cfg.rating_interval, 20s otherwise.
-* cfg.rating_inverval (integer) The default value for doc.endpoint.rating_interval. Default: 20s.
+* doc.endpoint.incall_inverval (integer) Interval at which to re-evaluate the call for continuation. Default: cfg.incall_interval, 20s otherwise.
+* cfg.incall_inverval (integer) The default value for doc.endpoint.incall_interval. Default: 20s.
 
-        interval = @session.rated.params.client?.rating_interval
-        interval ?= @cfg.rating_interval
+        interval = @session.rated.params.client?.incall_interval
+        interval ?= @cfg.incall_interval
         interval ?= 20
 
 Execute the script a first time when the call is routing / in-progress.
@@ -237,12 +237,12 @@ Aterwards, we wait for the call to be answered.
 
           await sleep_until start_time.clone().add seconds: end_of_interval
 
-then once for every rating interval.
+then once for every interval.
 
           while running
 
 Note: we always compute the conditions at the _end_ of the _upcoming_ interval, and we do not start an interval that would result in a rejection.
-(In other words, we attempt to maintain the invariant implemented by `rating_ornaments`.)
+(In other words, we attempt to maintain the invariant implemented by `incall_script`.)
 
             end_of_interval += interval
             await incall_execute end_of_interval
@@ -257,7 +257,7 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
           @call.removeListener 'CHANNEL_ANSWER', on_answer
           running = false
 
-        @debug '(Private) rating ornament is ready.'
+        @debug '(Private) in-call script is ready.'
 
 Handle both the case where the call is over (sync)
 
