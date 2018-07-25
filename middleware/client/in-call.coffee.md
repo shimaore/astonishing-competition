@@ -138,7 +138,11 @@ Ornaments might be set on the endpoint to add decisions as to whether the call s
 Note that `@ornaments_commands` is the standard `huge-play` set.
 We need to map the functions because they are not bound to the call by `huge-play`, and need access to the call (they cannot use the context created by the Runner).
 
-        private_commands = Object.assign {}, @ornaments_commands.map( (f) => f.bind this ), rate,
+        ornaments_commands = {}
+        for own k,v of @ornaments_commands
+          ornaments_commands[k] = v.bind this
+
+        private_commands = Object.assign {}, ornaments_commands, rate,
 
 Hangs the call up.
 
@@ -189,7 +193,7 @@ Compute the CDR at that point in time.
 
 Then execute the decision code on the updated CDR.
 
-          unless cdr.hide_call
+          unless incall_cdr.hide_call
             Object.assign private_cdr, incall_cdr
             await private_executor.run private_fun, private_cdr
 

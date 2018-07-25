@@ -46,7 +46,7 @@ But, conversely, in a prepaid situation, the code running multiple times for the
         for own k,v of cdr when k[0] isnt '_'
           working_cdr[k] = v
 
-        await @evaluate fun, working_cdr
+        await @run fun, working_cdr
 
 The billing rules may not modify values in the original, rated CDR,
 nor the copy we send back.
