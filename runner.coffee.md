@@ -1,8 +1,9 @@
     run = require 'flat-ornament'
     Rated = require 'entertaining-crib/rated'
     debug = (require 'tangible') 'astonishing-competition:runner'
+    moment = require 'moment'
 
-    default_expire = -> Date.now() + 32*24*60*60*1000
+    default_expire = -> moment().endOf('month').add(1,'day').valueOf()
 
 Execute the ornaments
 ---------------------
@@ -17,8 +18,7 @@ Execute the ornaments
 
         ctx = {
           cdr
-          setup_counter: (name,expire) => @br.setup_counter (pr name), expire ? default_expire()
-          update_counter: (name,value) => @br.update_counter (pr name), value
+          update_counter: (name,value,expire) => @br.update_counter (pr name), value, expire ? default_expire()
           get_counter: (name) => @br.get_counter (pr name)
         }
         await fun.call ctx
@@ -58,4 +58,4 @@ nor the copy we send back.
 
         cdr
 
-    module.exports = {Executor,Runner}
+    module.exports = {Executor}

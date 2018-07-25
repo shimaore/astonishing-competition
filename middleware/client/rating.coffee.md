@@ -1,5 +1,4 @@
-    pkg = require '../package.json'
-    @name = "#{pkg.name}:middleware:rating"
+    @name = "astonishing-competition:middleware:rating"
 
     Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'

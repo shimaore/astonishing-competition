@@ -98,7 +98,7 @@ Commands
 
 The following commands are meant to be executed in the context of this module's runner; that context currently contains:
 - `cdr` — some CDR data, which can be freely modified by the code (changes are thrown away at the end of the call)
-- `setup_counter`, `update_counter`, and `get_counter`, bound to a specific sub-account and context.
+- `update_counter`, and `get_counter`, bound to a specific sub-account and context.
 
     commands =
 
@@ -117,10 +117,7 @@ Count the numbe of different destinations (numbers) called
           'fr-FR': 'destinataires {0} différents'
         action: (counter) ->
 
-          await @setup_counter counter
-
           per_destination = ['@@@',counter,@cdr.remote_number].join ' '
-          await @setup_counter per_destination
 
           [coherent,exists] = await @update_counter per_destination, 1
           if exists is 1
@@ -145,7 +142,6 @@ Increment a counter for this call (once)
         name:
           'fr-FR': 'incrémente {0} de {1}'
         action: (counter,value = 1) ->
-          await @setup_counter counter
           await once_per_call @cdr, counter, => @update_counter counter, value
           true
 
@@ -166,7 +162,6 @@ Increment a counter with this call's duration or amount (once)
         name:
           'fr-FR': "incrémente {0} de la durée de l'appel"
         action: (counter) ->
-          await @setup_counter counter
           await delta_per_call @cdr, counter, @cdr.duration, (delta) => @update_counter counter, delta
           true
 
@@ -174,7 +169,6 @@ Increment a counter with this call's duration or amount (once)
         name:
           'fr-FR': "incrémente {0} du montant de l'appel"
         action: (counter) ->
-          await @setup_counter counter
           await delta_per_call @cdr, counter, @cdr.actual_amount, (delta) => @update_counter counter, delta
           true
 

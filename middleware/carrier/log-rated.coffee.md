@@ -1,4 +1,4 @@
-    @name = "#{(require '../package').name}:middleware:log-rated"
+    @name = "astonishing-competition:middleware:carrier:log-rated"
     {debug,hand,heal} = (require 'tangible') @name
     fs = (require 'bluebird').promisifyAll require 'fs'
     path = require 'path'
@@ -20,9 +20,9 @@ Save remotely by default, fallback to
         debug 'Dispose of', key
         value?.close?()
 
-    {Executor,Runner} = require '../runner'
-    {rate,counter_period} = require '../commands'
-    {get_ornaments} = require '../get_ornaments'
+    {Executor} = require '../../runner'
+    {rate,counter_period} = require '../../commands'
+    {get_ornaments} = require '../../get_ornaments'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
       now = moment.utc()

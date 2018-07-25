@@ -4,9 +4,9 @@
     PouchDB = require 'shimaore-pouchdb-core'
       .plugin require 'pouchdb-adapter-memory'
       .defaults adapter:'memory'
-    describe 'rating', ->
-      m1 = require '../middleware/rating'
-      m2 = require '../middleware/log-rated'
+    describe.skip 'rating', ->
+      m1 = require '../middleware/client/rating'
+      m2 = require '../middleware/carrier/log-rated'
       it 'should set `rated`', (done) ->
         @timeout 7*1000
 

@@ -1,14 +1,14 @@
-    @name = "#{(require '../package').name}:middleware:in-call"
+    @name = "astonishing-competition:middleware:client:in-call"
     {debug,hand,heal} = (require 'tangible') @name
     PouchDB = require 'ccnq4-pouchdb'
-    BlueRings = require 'blue-rings'
+    BlueRing = require 'blue-rings'
     moment = require 'moment'
     assert = require 'assert'
     uuid = require 'uuid'
 
     plans_db = null
 
-    {Executor} = require '../runner'
+    {Executor} = require '../../runner'
     {rate,counter_period} = require '../../commands'
     {get_ornaments} = require '../../get_ornaments'
     compile = require '../../compile'
@@ -24,7 +24,9 @@ Compute period
 
     @server_pre = ->
 
-      @cfg.br = BlueRings @cfg.blue_rings
+      @cfg.blue_rings ?= {}
+      @cfg.blue_rings.Value ?= BlueRing.integer_values
+      @cfg.br = BlueRing.run @cfg.blue_rings
 
       if @cfg.aggregation?.plans?
         plans_db = new PouchDB @cfg.aggregation.plans
