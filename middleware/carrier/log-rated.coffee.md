@@ -293,8 +293,6 @@ For the client
               cdr = client_cdr?.toJSON() ? {}
               cdr.processed = false
 
-            cdr.trace_id = @session._id
-
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
             unless cdr.hide_call
@@ -320,7 +318,6 @@ A rated `carrier` object, saved into the rated-database for the carrier.
 
           carrier_cdr.compute duration
           cdr = carrier_cdr.toJSON()
-          cdr.trace_id = @session._id
 
           try
             await @cfg.safely_write carrier_database, cdr
