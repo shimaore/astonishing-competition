@@ -1,4 +1,5 @@
     @name = "astonishing-competition:middleware:rating"
+    {debug} = (require 'tangible') @name
 
     Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'
@@ -16,20 +17,25 @@
         value?.close?()
 
     @server_pre = ->
-      @debug 'server_pre'
+
+      prefix = @cfg.rating?.tables ? @cfg.prefix_admin
+      RatingPouchDB = PouchDB.defaults {prefix}
+
+      debug 'server_pre', prefix
+
       @cfg.rating = new Rating
         source: @cfg.rating?.source ? 'default'
         rating_tables:
           if not @cfg.rating?.tables? or typeof @cfg.rating.tables is 'string'
-            (name) =>
+            (name) ->
               db = cache.get name
               return db if db?
-              db = new PouchDB name, prefix: @cfg.rating?.tables ? @cfg.prefix_admin
+              db = new RatingPouchDB name
               cache.set name, db
               db
           else
             @cfg.rating?.tables
-      @debug 'server_pre: Ready'
+      debug 'server_pre: Ready'
 
     @include = ->
 
