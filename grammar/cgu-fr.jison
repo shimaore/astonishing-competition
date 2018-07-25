@@ -122,32 +122,20 @@ NAME        [A-Za-z][\w-]+
 %% /* grammar */
 
 start
-  : CGU hide_emergency fr_cgu EOF { return async function () {
-      if ($2()) return;
-      await $3();
-    }}
+  : CGU hide_emergency fr_cgu EOF -> async function () { if ($2()) return; await $3(); }
   ;
 
 hide_emergency
-  : EMERGENCY -> async function () {
-      var emergency = yy.valid_op.called_emergency();
-      if (emergency) {
-        yy.valid_op.hide_call()
-      }
-      return emergency;
-    }}
+  : EMERGENCY -> async function () { var emergency = yy.valid_op.called_emergency(); if (emergency) { yy.valid_op.hide_call() } return emergency; }
   ;
 
 fr_cgu
-  : fr_cgu fr_cgu_sentence -> async function () {
-      if (!await $1()) return;
-      return await $2();
+  : fr_cgu fr_cgu_sentence -> async function () { var cond = await $1(); if (!cond) return; return await $2() }
+  | fr_cgu_sentence -> $1
   ;
 
 fr_cgu_sentence
-  : sentence '.' -> async function () {
-      await yy.op.reset_up_to();
-      return await $1();
+  : sentence '.' -> async function () { await yy.op.reset_up_to(); return await $1() }
   ;
 
 sentence
@@ -158,12 +146,12 @@ sentence
 
 conditions
   : conditions condition -> $1.concat($2)
-  | condition -> $1
+  | condition -> [$1]
   ;
 
 outcomes
   : outcomes outcome -> $1.concat($2)
-  | outcome -> 
+  | outcome -> [$1]
   ;
 
 condition
@@ -173,10 +161,10 @@ condition
   | CALLED_FIXED_OR_MOBILE  -> yy.op.called_fixed_or_mobile
   | CALLED_MOBILE           -> yy.op.called_mobile
   | TOWARDS countries       -> function () { return yy.op.called_country($2) }
-  | ATMOST callees                 { var name = yy.new_name(); $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
-  | ATMOST callees name            { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
+  | ATMOST callees          { var name = yy.new_name(); $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
+  | ATMOST callees name     { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
   | ATMOST callees name PER_CYCLE  { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
-  | ATMOST callees period          { var name = yy.new_name(); $$ = async function () { await yy.op.count_called_per(name,$3); return await yy.op.at_most($2,name) }}
+  | ATMOST callees period   { var name = yy.new_name(); $$ = async function () { await yy.op.count_called_per(name,$3); return await yy.op.at_most($2,name) }}
   | ATMOST callees name period     { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called_per(name,$4); return await yy.op.at_most_per($2,name,$4) }}
   | ATMOST duration PER_CALL       {                           $$ = async function () { await yy.op.per_call_up_to($2) }}
   | ATMOST duration PER_CYCLE      { var name = yy.new_name(); $$ = async function () { await yy.op.increment_duration(name); return await yy.op.up_to($2,name) }}
@@ -206,8 +194,8 @@ time_unit
   ;
 
 countries
-  : countries ',' country -> $$ = $1.concat([$3])
-  | country               -> $$ = [$1]
+  : countries ',' country -> $1.concat([$3])
+  | country               -> [$1]
   ;
 
 country
