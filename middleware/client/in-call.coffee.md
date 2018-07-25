@@ -1,5 +1,5 @@
     @name = "astonishing-competition:middleware:client:in-call"
-    {debug,hand,heal} = (require 'tangible') @name
+    {debug,foot,heal} = (require 'tangible') @name
     PouchDB = require 'ccnq4-pouchdb'
     BlueRing = require 'blue-rings'
     moment = require 'moment'
@@ -229,7 +229,7 @@ Aterwards, we wait for the call to be answered.
 
         await @call.event_json 'CHANNEL_ANSWER', 'CHANNEL_HANGUP_COMPLETE'
 
-        on_answer = hand =>
+        on_answer = foot =>
           debug 'CHANNEL_ANSWER'
           running = true
           start_time = moment.utc()
