@@ -1,0 +1,8 @@
+image: node:alpine
+
+build:
+  script:
+  - apk --update add build-base python
+  - npm install
+  - npm audit
+  - npm test

@@ -1,41 +1,11 @@
-    @name = "astonishing-competition:middleware:rating"
+    @name = "astonishing-competition:middleware:client:rating"
     {debug} = (require 'tangible') @name
 
-    Rating = require 'entertaining-crib'
     Rated = require 'entertaining-crib/rated'
-    PouchDB = require 'ccnq4-pouchdb'
-    LRU = require 'lru-cache'
 
-* cfg.rating (object, optional) parameters for the rating of calls
-* cfg.rating.source (string) name of the cfg.rating.tables source. Default: `default`
-* cfg.rating.tables (URI prefix) used to access the rating tables of the entertaining-crib module. Default: cfg.prefix_admin (from nimble-direction, i.e. env.NIMBLE_PREFIX_ADMIN)
-
-    cache = LRU
-      max: 200
-      dispose: (key,value) ->
-        debug 'Dispose of', key
-        value?.close?()
-
-    @server_pre = ->
-
-      prefix = @cfg.rating?.tables ? @cfg.prefix_admin
-      RatingPouchDB = PouchDB.defaults {prefix}
-
-      debug 'server_pre', prefix
-
-      @cfg.rating = new Rating
-        source: @cfg.rating?.source ? 'default'
-        rating_tables:
-          if not @cfg.rating?.tables? or typeof @cfg.rating.tables is 'string'
-            (name) ->
-              db = cache.get name
-              return db if db?
-              db = new RatingPouchDB name
-              cache.set name, db
-              db
-          else
-            @cfg.rating?.tables
-      debug 'server_pre: Ready'
+This code may be called twice:
+- once, at the beginning of the call (but before LCR routing) to handle the `client`-side code (especially ornaments)
+- a second time, after LCR processing, to add the `carrier-side` parameter.
 
     @include = ->
 
@@ -44,17 +14,31 @@
 * session.rated.client (Rated object from entertaining-crib) rating object, client-side
 * session.rated.carrier (Rated object from entertaining-crib) rating object, carrier-side
 
-      stamp = new Date().toISOString()
+      params = @session.rated?.params
 
-      params =
-          direction: @session.cdr_direction
-          to: @session.ccnq_to_e164
-          from: @session.ccnq_from_e164
-          stamp: stamp
-          client: @session.endpoint # from huge-play (egress-only since 15.x)
-          carrier: @session.winner # from tough-rate
+      if params?
 
-      @debug 'Client is ', params.client?._id
+        debug 'Updating params', @session.winner
+        if @session.winner?
+          params.carrier = @session.winner
+        else
+          debug 'No session.winner, ignoring'
+          return
+
+      else
+
+        debug 'Creating params', @session.endpoint, @session.winner
+        stamp = new Date().toISOString()
+
+        params =
+            direction: @session.cdr_direction
+            to: @session.ccnq_to_e164
+            from: @session.ccnq_from_e164
+            stamp: stamp
+            client: @session.endpoint # from huge-play (egress-only since 15.x)
+            carrier: @session.winner # from tough-rate
+
+      @debug 'Client  is ', params.client?._id
       @debug 'Carrier is ', params.carrier?._id
 
       @session.rated = await @cfg.rating

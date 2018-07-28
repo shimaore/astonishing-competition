@@ -14,7 +14,7 @@ Execute the ornaments
       run: (fun,cdr) ->
         debug 'Executor::execute', {cdr}
 
-        pr = (name) -> "#{@prefix} #{name}"
+        pr = (name) => "#{@prefix} #{name}"
 
         ctx = {
           cdr
@@ -36,7 +36,7 @@ Note: we must build a new `Rated` object since its duration can only be set once
 
         cdr = new Rated cdr
         cdr.compute duration
-        cdr = cdr.toJSON()
+        cdr = cdr.toJS()
 
 The billing rules may modify the working CDR, but not the original cdr.
 This is done so that, when generating aggregated CDRs from rated CDRs, the `_id` and `_rev` fields esp. are not modified accidentally.
