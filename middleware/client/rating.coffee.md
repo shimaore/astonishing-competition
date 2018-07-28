@@ -14,29 +14,16 @@ This code may be called twice:
 * session.rated.client (Rated object from entertaining-crib) rating object, client-side
 * session.rated.carrier (Rated object from entertaining-crib) rating object, carrier-side
 
-      params = @session.rated?.params
+      debug 'Creating params', @session.endpoint, @session.winner
+      stamp = new Date().toISOString()
 
-      if params?
-
-        debug 'Updating params', @session.winner
-        if @session.winner?
-          params.carrier = @session.winner
-        else
-          debug 'No session.winner, ignoring'
-          return
-
-      else
-
-        debug 'Creating params', @session.endpoint, @session.winner
-        stamp = new Date().toISOString()
-
-        params =
-            direction: @session.cdr_direction
-            to: @session.ccnq_to_e164
-            from: @session.ccnq_from_e164
-            stamp: stamp
-            client: @session.endpoint # from huge-play (egress-only since 15.x)
-            carrier: @session.winner # from tough-rate
+      params =
+        direction: @session.cdr_direction
+        to: @session.ccnq_to_e164
+        from: @session.ccnq_from_e164
+        stamp: stamp
+        client: @session.endpoint # from huge-play (egress-only since 15.x)
+        carrier: @session.winner # from tough-rate
 
       @debug 'Client  is ', params.client?._id
       @debug 'Carrier is ', params.carrier?._id

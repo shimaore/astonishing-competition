@@ -2,7 +2,7 @@
       list = [
           'middleware/in-call'
           'middleware/client/rating'
-          'middleware/carrier/log-rated'
+          'middleware/client/log-rated'
         ]
 
       unit = (m) ->

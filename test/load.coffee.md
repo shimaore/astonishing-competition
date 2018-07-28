@@ -24,8 +24,8 @@
         cfg = aggregation: plans: 'h'
         m.server_pre.call cfg:cfg, debug: debug
         m.include.call cfg:cfg, respond: (->), debug: debug, direction: (->), action: (-> await return)
-      it 'should load carrier/log-rated', ->
-        m = require '../middleware/carrier/log-rated'
+      it 'should load client/log-rated', ->
+        m = require '../middleware/client/log-rated'
         cfg = aggregation: plans: 'h'
         m.server_pre.call cfg:cfg, debug: debug
         m.include.call cfg:cfg, respond: (->), debug: debug, direction: (->), action: (-> await return)

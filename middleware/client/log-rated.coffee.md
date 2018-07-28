@@ -1,4 +1,4 @@
-    @name = "astonishing-competition:middleware:carrier:log-rated"
+    @name = "astonishing-competition:middleware:client:log-rated"
     {debug,heal} = (require 'tangible') @name
     PouchDB = require 'ccnq4-pouchdb'
       .plugin require 'pouchdb-adapter-leveldb'
@@ -132,6 +132,28 @@ This CDR is saved in a database.
         duration = Math.ceil( parseInt(cdr_report.billable,10) / seconds )
 
         debug 'handle_final', duration
+
+Handle the interface with tough-rate.
+
+`tough-rate` will set `session.gateway` before placing the call out, and `session.winner` once the call is successfully _finished_.
+However `session.winner` might be set _after_ we get called, depending on timing; so if it is present we use it; if it isn't, we assume the last gateway tried by tough-rate is the one we need to consider.
+
+        params = @session.rated?.params
+        params.carrier ?= @session.winner or @session.gateway
+
+Rebuild @session.rated, similarly to what is done in ./rating
+
+        @debug 'Client  is ', params.client?._id
+        @debug 'Carrier is ', params.carrier?._id
+
+        @session.rated = await @cfg.rating
+          .rate params
+          .catch (error) =>
+            @debug "rating_rate failed: #{error.stack ? error}"
+            null
+
+        @session.rated ?= {}
+        @session.rated.params = params
 
 For the client
 --------------

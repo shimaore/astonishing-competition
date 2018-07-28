@@ -12,7 +12,7 @@
       s2 = require '../middleware/tools'
       m1 = require '../middleware/client/rating'
       m2 = require '../middleware/in-call'
-      m3 = require '../middleware/carrier/log-rated'
+      m3 = require '../middleware/client/log-rated'
       it 'should set `rated`', ->
         @timeout 7*1000
 
@@ -141,23 +141,22 @@ Client-side data
 Carrier-side data
 
         await sleep 5000
-        ctx.session.winner =
+        ctx.session.gateway =
           _id: 'carrier:bob the carrier'
           carrier: 'bob the carrier'
           rating:
             '2016-01-01':
               table: 'carrier+current'
           timezone: 'UTC'
-        await m1.include.call ctx, ctx
-        ctx.session.rated.should.have.property 'carrier'
-        ctx.session.rated.params.carrier.should.equal ctx.session.winner
-        ctx.session.rated.carrier.should.have.property 'currency', 'EUR'
 
 Wait for cdr-report to be sent
 
         await sleep 1000
 
         debug 'ctx.session.rated', ctx.session.rated
+        ctx.session.rated.should.have.property 'carrier'
+        ctx.session.rated.params.carrier.should.equal ctx.session.gateway
+        ctx.session.rated.carrier.should.have.property 'currency', 'EUR'
 
         ctx.session.rated.client.should.have.property 'duration', 33
         ctx.session.rated.client.should.have.property 'amount', 7
