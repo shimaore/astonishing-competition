@@ -5,6 +5,6 @@
         parser = new Parser()
         name = 0
         parser.yy.new_name = -> "name#{name++}"
-        parser.yy.op = (require '../commands').rate
+        parser.yy.op = (require '../commands').commands
         text = fs.readFileSync './test/new-cgu-knet.txt', encoding:'utf8'
         (require 'assert') parser.parse text
