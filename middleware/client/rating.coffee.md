@@ -1,7 +1,11 @@
-    @name = "astonishing-competition:middleware:rating"
+    @name = "astonishing-competition:middleware:client:rating"
     {debug} = (require 'tangible') @name
 
     Rated = require 'entertaining-crib/rated'
+
+This code may be called twice:
+- once, at the beginning of the call (but before LCR routing) to handle the `client`-side code (especially ornaments)
+- a second time, after LCR processing, to add the `carrier-side` parameter.
 
     @include = ->
 
@@ -10,17 +14,31 @@
 * session.rated.client (Rated object from entertaining-crib) rating object, client-side
 * session.rated.carrier (Rated object from entertaining-crib) rating object, carrier-side
 
-      stamp = new Date().toISOString()
+      params = @session.rated?.params
 
-      params =
-          direction: @session.cdr_direction
-          to: @session.ccnq_to_e164
-          from: @session.ccnq_from_e164
-          stamp: stamp
-          client: @session.endpoint # from huge-play (egress-only since 15.x)
-          carrier: @session.winner # from tough-rate
+      if params?
 
-      @debug 'Client is ', params.client?._id
+        debug 'Updating params', @session.winner
+        if @session.winner?
+          params.carrier = @session.winner
+        else
+          debug 'No session.winner, ignoring'
+          return
+
+      else
+
+        debug 'Creating params', @session.endpoint, @session.winner
+        stamp = new Date().toISOString()
+
+        params =
+            direction: @session.cdr_direction
+            to: @session.ccnq_to_e164
+            from: @session.ccnq_from_e164
+            stamp: stamp
+            client: @session.endpoint # from huge-play (egress-only since 15.x)
+            carrier: @session.winner # from tough-rate
+
+      @debug 'Client  is ', params.client?._id
       @debug 'Carrier is ', params.carrier?._id
 
       @session.rated = await @cfg.rating
