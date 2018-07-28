@@ -1,15 +1,12 @@
     @name = "astonishing-competition:middleware:client:in-call"
     {debug,foot,heal} = (require 'tangible') @name
     PouchDB = require 'ccnq4-pouchdb'
-    BlueRing = require 'blue-rings'
     moment = require 'moment'
-    assert = require 'assert'
-    uuid = require 'uuid'
 
     plans_db = null
 
     {Executor} = require '../../runner'
-    {commands,counter_period} = require '../../commands'
+    {commands} = require '../../commands'
     {get_ornaments} = require '../../get_ornaments'
     compile = require '../../compile'
     sleep = require 'marked-summer/sleep'
@@ -24,37 +21,12 @@ Compute period
 
     @server_pre = ->
 
-      @cfg.blue_rings ?= {}
-      @cfg.blue_rings.Value ?= BlueRing.integer_values
-      @cfg.br = BlueRing.run @cfg.blue_rings
 
       if @cfg.aggregation?.plans?
         plans_db = new PouchDB @cfg.aggregation.plans
       else
         debug 'Missing cfg.aggregation.plans'
 
-* cfg.period_for (function, optional) maps a rated.client or rated.carrier into a period. Default: use cfg.period_of on the connection timestamp and timezone.
-
-      @cfg.period_for ?= (side) =>
-        return unless side?
-        side.period = @cfg.period_of side.connect_stamp, side.timezone
-
-* cfg.period_for_client (function) computes a client-side period based on a rated CDR. Default: use cfg.period_for on the rated.client record.
-
-      @cfg.period_for_client ?= (rated) =>
-        @cfg.period_for rated.client
-
-* cfg.rated_sub_account (function) computes a sub-account unique identifier based on a rated CDR. Default: use rated.params.client.account and rated.params.client.sub_account.
-
-      @cfg.rated_sub_account ?= (rated) ->
-        p = rated.params.client
-        switch
-          when p?.account? and p?.sub_account?
-            [p.account,p.sub_account].join '_'
-          when p?.account?
-            p.account
-          else
-            'unknown-account'
 
 Call handler
 ============
