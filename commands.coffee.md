@@ -82,8 +82,8 @@ The operation might be sync or async.
 
     once_per_call = (cdr,counter,cb) ->
       name = "_incremented #{counter}"
-      unless @cdr[name]
-        @cdr[name] = true
+      unless cdr[name]
+        cdr[name] = true
         cb()
 
 Ensure the operation is only ran once per call, and provide a delta.
@@ -91,8 +91,8 @@ The operation might be sync or async.
 
     delta_per_call = (cdr,counter,value,cb) ->
       name = "_incremented #{counter}"
-      previous_value = @cdr[name] ?= 0
-      @cdr[name] = value
+      previous_value = cdr[name] ?= 0
+      cdr[name] = value
       if value > previous_value
         cb value - previous_value
 
