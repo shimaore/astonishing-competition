@@ -1,19 +1,11 @@
     @name = "astonishing-competition:middleware:carrier:log-rated"
-    {debug,hand,heal} = (require 'tangible') @name
-    fs = (require 'bluebird').promisifyAll require 'fs'
-    path = require 'path'
+    {debug,heal} = (require 'tangible') @name
     PouchDB = require 'ccnq4-pouchdb'
-    LRU = require 'lru-cache'
+      .plugin require 'pouchdb-adapter-leveldb'
+      .defaults adapter: 'leveldb'
     moment = require 'moment'
-    assert = require 'assert'
-    uuid = require 'uuid'
 
-Save remotely by default, fallback to
-
-    RemotePouchDB = null
-    LocalPouchDB = null
-    plans_db = null
-
+    LRU = require 'lru-cache'
     cache = LRU
       max: 12
       dispose: (key,value) ->
@@ -21,8 +13,9 @@ Save remotely by default, fallback to
         value?.close?()
 
     {Executor} = require '../../runner'
-    {rate,counter_period} = require '../../commands'
+    build_commands = require '../commands'
     {get_ornaments} = require '../../get_ornaments'
+    compile = require '../../compile'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
       now = moment.utc()
@@ -31,104 +24,58 @@ Save remotely by default, fallback to
 
     seconds = 1000
 
+Save in a local PouchDB file, and replicate to upstream.
+
+    LocalDB = null
+
 Compute period
+
+    plans_db = null
 
     @server_pre = ->
 
+      unless @cfg.aggregation?
+        unless @cfg.route_non_billable_calls
+          throw new Error 'Missing cfg.aggregation'
+
+      {plans,local,remote} = @cfg.aggregation
+
+Configure `plans_db`
+
+      plans_db = @cfg.aggregation.PlansDB
+      plans_db = new PouchDB plans if plans?
+
+Configure `LocalDB`
+
 * cfg.aggregation.remote (string,URI,required) base URI for remote invoicing databases
-
-      if @cfg.aggregation?.remote?
-        RemotePouchDB = (name) =>
-          cache_name = "RemotePouchDB #{name}"
-          db = cache.get cache_name
-          return db if db?
-          db = new PouchDB name, prefix: @cfg.aggregation.remote
-          cache.set cache_name, db
-          db
-
-      else
-        debug 'Missing cfg.aggregation.remote'
-
 * cfg.aggregation.local (string,path) directory where CDRs are stored if cfg.aggregation.remote fails. The directory must be present.
 
-      if @cfg.aggregation?.local?
-        LocalPouchDB = (name) =>
-          cache_name = "LocalPouchDB #{name}"
-          db = cache.get cache_name
-          return db if db?
-          db = new PouchDB name, prefix: @cfg.aggregation.local
-          cache.set cache_name, db
-          db
 
-      else
-        debug 'Missing cfg.aggregation.local'
+      LocalDB = @cfg.aggregation.LocalDB ? (name) =>
+        db = cache.get name
+        return db if db?
 
-      if @cfg.aggregation?.plans?
-        plans_db = new PouchDB @cfg.aggregation.plans
-      else
-        debug 'Missing cfg.aggregation.plans'
+        switch
+
+          when local?
+            db = new PouchDB name, prefix: local
+            if remote?
+              target = new PouchDB name, prefix: remote
+              db.replicate.to target, live: true, retry: true
+
+          when remote?
+            db = new PouchDB name, prefix: remote
+
+          else
+            @debug.dev "Neither aggregation.local not aggregation.remote, saving CDRs wherever!"
+            db = new PouchDB name
+
+        cache.set name, db
+        db
 
 * cfg.CDR_DB_PREFIX (string) database-name prefix for CDRs. Default: `cdr`
 
       @cfg.CDR_DB_PREFIX ?= 'cdr'
-
-Safely-write
-------------
-
-Try remote database, local database, and local file.
-
-* cfg.safely_write (function) save data in a database, try remote database, local database, and local file.
-
-      @cfg.safely_write ?= (database,data) ->
-        data.database = database
-        return unless RemotePouchDB?
-
-        debug 'try remote db', database, data._id
-        remote_db = RemotePouchDB database
-
-        try
-          await remote_db.put data
-
-        catch error
-          safely_write_local database, data
-
-        remote_db = null
-
-Safely-write, local database
-----------------------------
-
-      safely_write_local = (database,data) ->
-        data.database = database
-        return unless LocalPouchDB?
-
-        debug 'try local db', database
-        local_db = LocalPouchDB database
-
-        try
-          await local_db.put data
-
-FIXME sync from local_db to remote_db in the background to ensure our local records eventually make it to the server
-FIXME purge local_db so that it doesn't just grow in size indefinitely
-
-        catch error
-          safely_write_file database, data
-
-FIXME upload locally-saved JSON files to remote-db
-
-        local_db = null
-
-Safely-write, local file
-------------------------
-
-      safely_write_file = (database,data) =>
-        data.database = database
-        return unless @cfg.aggregation?.local?
-
-        filename = path.join @cfg.aggregation.local, "#{uuid.v4()}.json"
-        debug 'save as JSON', filename
-        await fs.writeFileAsync filename, JSON.stringify(data), 'utf-8'
-
-      null
 
 Call handler
 ============
@@ -137,29 +84,32 @@ Call handler
 
       @debug 'Start'
 
+These are all preconditions. None of them should fail unless the proper modules are not loaded.
+(In other words these all indicate developer errrors.)
+
+      fail = =>
+        await @respond '500 Unable to rate'
+        @direction 'failed'
+
       unless @session?
-        heal @action 'respond', '500 No session, unable to rate'
+        @debug.dev 'No session'
+        fail()
         return
 
-Prevent calls from going through if we won't be able to rate / save them.
-
-      unless plans_db and (RemotePouchDB? or LocalPouchDB?)
+      unless plans_db and LocalDB
         unless @cfg.route_non_billable_calls
-          @debug 'Unable to rate, no plans_db or Remote/Local PouchDB'
-          await @respond '500 Unable to rate'
-          @direction 'failed'
+          @debug 'No plans_db or LocalDB'
+          fail()
         return
 
       unless @session.rated?
-        @debug 'No session.rated'
-        await @respond '500 Unable to rate'
-        @direction 'failed'
+        @debug.dev 'No session.rated'
+        fail()
         return
 
       unless @session.rated.params?
-        @debug 'No session.rated.params'
-        await @respond '500 Unable to rate'
-        @direction 'failed'
+        @debug.dev 'No session.rated.params'
+        fail()
         return
 
 Remember, we expect to have:
@@ -167,60 +117,11 @@ Remember, we expect to have:
 - session.rated.carrier (might be missing)
 - session.rated.params, esp session.rated.params.client and session.rated.params.carrier.
 
-We need to figure out:
-- where we want to log: which databases (two for client side, one for carrier side)
-- how we want to log it: what document identifier
-
 All databases are period-bound (typically, monthly).
 The databases can be deleted after whatever time interval is convenient in terms of storage space and legal obligations.
 
-We're saving three objects per call, in four different databases.
-
-Client setup
-------------
-
-A rated and aggregated `client` object, used for billing, saved into the rated-databases.
-
-### Before the call starts.
-
-      client_cdr = @session.rated.client
-
-      if client_cdr?
-
-        @debug 'Preprocessing client', client_cdr
-
-        plan_ornaments = await get_ornaments plans_db, client_cdr
-
-We assume that invoices are generated at the `account` level.
-
-        account = @cfg.rated_account @session.rated
-
-And that counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
-
-        sub_account = @cfg.rated_sub_account @session.rated
-
-        client_period = @cfg.period_for_client @session.rated
-
-Period-database: (monthly) database used to globally generate invoices. Contains data for all accounts.
-
-        client_database = [@cfg.CDR_DB_PREFIX,client_period].join '-'
-
-Counters at the sub-account level.
-
-        counters_prefix = ['counters',sub_account,client_period].join ' '
-
-This is the runner for the client-side billing.
-Note: doing billing client-side is a bad idea. This needs to move to debonair-marble.
-
-        client_executor = new Executor "C #{counters_prefix}", rate
-        client_runner = new Runner client_executor, blue_ring
-
-      else
-
-        @debug 'No session.rated.client'
-
-Compute and save CDR
-====================
+End-of-call handler
+===================
 
       debug 'Setting handle_final'
 
@@ -235,29 +136,51 @@ This CDR is saved in a database.
 For the client
 --------------
 
-        if client_runner?
+        client_cdr = @session.rated.client
+        if client_cdr?
 
-          debug 'handle_final: client'
+          @debug 'Preprocessing client', client_cdr
+
+Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
+
+          sub_account = @cfg.rated_sub_account @session.rated
+          client_period = @cfg.period_for_client @session.rated
+          counters_prefix = ['ω',sub_account,client_period].join ' '
+
+          private_commands = build_commands.call this
+          executor = new Executor counters_prefix, private_commands, @cfg.br
+
+          plan_script = await get_ornaments plans_db, client_cdr
+
+TODO: Complement with CGU
+
+          plan_fun = try compile plan_script, private_commands if plan_script?
+          unless plan_fun?
+            debug.dev 'Invalid plan script (ignored)', plan_script
+          plan_fun ?= ->
+
+          debug 'handle_final: client', duration
           try
+            client_cdr.compute duration
+            cdr = client_cdr.toJS()
 
-            cdr = await client_runner.evaluate plan_ornaments, client_cdr, duration
+            await executor.run plan_fun, cdr
 
-            if cdr?
-              cdr.processed = true
-            else
-              debug 'CDR could not be processed.'
+            cdr.processed = true
 
-              cdr = client_cdr?.toJSON() ? {}
-              cdr.processed = false
+Period-database: (monthly) database used to globally generate invoices. Contains data for all accounts.
+
+            client_database = [@cfg.CDR_DB_PREFIX,client_period].join '-'
 
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
             unless cdr.hide_call
 
-              await @cfg.safely_write client_database, cdr
+              debug "LocalDB(#{client_database}).put", cdr
+              await LocalDB(client_database).put cdr
 
           catch error
-            debug "safely_write client: #{error.stack ? error}", client_database
+            debug.dev "safely_write client: #{error.stack ? JSON.stringify error}", client_database
 
 For the carrier
 ---------------
@@ -267,24 +190,25 @@ A rated `carrier` object, saved into the rated-database for the carrier.
         carrier_cdr = @session.rated.carrier
         if carrier_cdr?
 
-          debug 'handle_final: carrier'
-
-          carrier = @cfg.rated_carrier @session.rated
-          carrier_period = @cfg.period_for_carrier @session.rated
-          carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
-
-          carrier_cdr.compute duration
-          cdr = carrier_cdr.toJSON()
-
+          debug 'handle_final: carrier', duration
           try
-            await @cfg.safely_write carrier_database, cdr
+            carrier_cdr.compute duration
+            cdr = carrier_cdr.toJS()
+
+            carrier = @cfg.rated_carrier @session.rated
+            carrier_period = @cfg.period_for_carrier @session.rated
+            carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
+
+            debug "LocalDB(#{carrier_database}).put", cdr
+            await LocalDB(carrier_database).put cdr
+
           catch error
-            debug "safely_write carrier: #{error.stack ? error}", carrier_database
+            debug.dev "safely_write carrier: #{error.stack ? JSON.stringify error}", carrier_database
 
         debug 'rated:done'
 
-Put the CDR and trace in service
---------------------------------
+Put the handler in service
+--------------------------
 
 Handle both the case where the call is over (sync)
 
