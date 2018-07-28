@@ -9,7 +9,7 @@
     plans_db = null
 
     {Executor} = require '../../runner'
-    {rate,counter_period} = require '../../commands'
+    {commands,counter_period} = require '../../commands'
     {get_ornaments} = require '../../get_ornaments'
     compile = require '../../compile'
     sleep = require 'marked-summer/sleep'
@@ -93,8 +93,6 @@ Remember, we expect to have:
 Client setup
 ------------
 
-A rated and aggregated `client` object, used for billing, saved into the rated-databases.
-
 ### Before the call starts.
 
       client_cdr = @session.rated.client
@@ -142,7 +140,7 @@ We need to map the functions because they are not bound to the call by `huge-pla
         for own k,v of @ornaments_commands
           ornaments_commands[k] = v.bind this
 
-        private_commands = Object.assign {}, ornaments_commands, rate,
+        private_commands = Object.assign {}, ornaments_commands, commands,
 
 Hangs the call up.
 
@@ -152,22 +150,14 @@ Hangs the call up.
             @direction 'rejected'
             'over'
 
-Counter condition
-- per billing period
+Counter condition based on `incall_values`
 
-          at_most_value: (maximum_name,counter) ->
+          incall_atmost: (maximum_name,value,period) ->
             maximum = incall_values[maximum_name]
             return false unless maximum?
             return false unless 'number' is typeof maximum
             return false if isNaN maximum
-            [coherent,value] = await @get_counter counter
             value <= maximum
-
-- per other period (`day` etc.)
-
-          at_most_value_per: (maximum_name,counter,period) ->
-            name = counter_period counter, @cdr, period
-            private_commands.at_most_value.call this, maximum_name, name
 
         private_fun = try compile private_script, private_commands
         private_fun ?= ->

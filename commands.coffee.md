@@ -69,7 +69,10 @@ Cache/memoize
         .format period
 
     counter_period = ( counter, cdr, period ) ->
-      [counter,'PER',cdr_period cdr, period].join ' '
+      if typeof period is 'string'
+        [counter,'PER',cdr_period cdr, period].join ' '
+      else
+        counter
 
 Once per call
 -------------
@@ -112,10 +115,10 @@ Count the numbe of different destinations (numbers) called
 
 - per billing period
 
-      count_called:
-        name:
-          'fr-FR': 'destinataires {0} différents'
-        action: (counter) ->
+      # 'fr-FR': 'destinataires {0} différents (par {1})'
+      count_called: (counter,period) ->
+
+          counter = counter_period counter, @cdr, period
 
           per_destination = ['@@@',counter,@cdr.remote_number].join ' '
 
@@ -125,152 +128,104 @@ Count the numbe of different destinations (numbers) called
             await @update_counter counter, 1
           true
 
-- per specified period (default: daily)
-
-      count_called_per:
-        name:
-          'fr-FR': 'destinataires {0} différents par {1}'
-        action: (counter,period) ->
-          name = counter_period counter, @cdr, period
-          commands.count_called.action.call this, name
-
 Increment a counter for this call (once)
 
 - per billing period
 
-      increment:
-        name:
-          'fr-FR': 'incrémente {0} de {1}'
-        action: (counter,value = 1) ->
+      # 'fr-FR': 'incrémente {0} de {1} (par {2})'
+      increment: (counter,value,period) ->
+          counter = counter_period counter, @cdr, period
           await once_per_call @cdr, counter, => @update_counter counter, value
           true
-
-- per specified period (default: daily)
-
-      increment_per:
-        name:
-          'fr-FR': 'incrémente {0} de {1} par {2}'
-        action: (counter,value,period) ->
-          name = counter_period counter, @cdr, period
-          commands.increment.action.call this, name, value
 
 Increment a counter with this call's duration or amount (once)
 
 - per billing period
 
-      increment_duration:
-        name:
-          'fr-FR': "incrémente {0} de la durée de l'appel"
-        action: (counter) ->
+      # 'fr-FR': "incrémente {0} de la durée de l'appel (par {1})"
+      increment_duration: (counter,period) ->
+          counter = counter_period counter, @cdr, period
           await delta_per_call @cdr, counter, @cdr.duration, (delta) => @update_counter counter, delta
           true
 
-      increment_amount:
-        name:
-          'fr-FR': "incrémente {0} du montant de l'appel"
-        action: (counter) ->
+      # 'fr-FR': "incrémente {0} du montant de l'appel (par {1})"
+      increment_amount: (counter,period) ->
+          counter = counter_period counter, @cdr, period
           await delta_per_call @cdr, counter, @cdr.actual_amount, (delta) => @update_counter counter, delta
           true
 
-- per specified period (default: daily)
-
-      increment_duration_per:
-        name:
-          'fr-FR': "incrémente {0} par {1} de la durée de l'appel"
-        action: (counter,period) ->
-          name = counter_period counter, @cdr, period
-          commands.increment_duration.action.call this, name
-
-      increment_amount_per:
-        name:
-          'fr-FR': "incrémente {0} par {1} du montant de l'appel"
-        action: (counter,period) ->
-          name = counter_period counter, @cdr, period
-          commands.increment_amount.action.call this, name
-
 Counters conditions
 
-- per billing period
-
-      at_most:
-        name:
-          'fr-FR': 'au plus {0} {1} par facture'
-        condition: (maximum,counter) ->
+      # 'fr-FR': 'au plus {0} {1} (par {2})'
+      at_most: (maximum,counter,period) ->
+          counter = counter_period counter, @cdr, period
           [coherent,value] = await @get_counter counter
           value <= maximum
 
-- per specified period (default: daily)
+Counter value
 
-      at_most_per:
-        name:
-          'fr-FR': 'au plus {0} {1} par {2}'
-        condition: (maximum,counter,period) ->
-          name = counter_period counter, @cdr, period
-          commands.at_most.condition.call this, maximum, name
+      get_counter: (counter,period) ->
+        counter = counter_period counter, @cdr, period
+        [coherent,value] = await @get_counter counter
+        value
 
 Destination conditions
 
-      called_mobile:
-        name:
-          'fr-FR': 'vers les mobiles'
-        condition: ->
+      # 'fr-FR': 'vers les mobiles'
+      called_mobile: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
           return data?.mobile or data?.mixed
 
-      called_fixed:
-        name:
-          'fr-FR': 'vers les fixes'
-        condition: ->
+      # 'fr-FR': 'vers les fixes'
+      called_fixed: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
           return data?.fixed or data?.mixed
 
-      called_fixed_or_mobile:
-        name:
-          'fr-FR': 'vers les fixes et les mobiles'
-        condition: ->
+      # 'fr-FR': 'vers les fixes et les mobiles'
+      called_fixed_or_mobile: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
           return data?.mixed or data?.fixed or data?.mobile
 
-      called_country:
-        name:
-          'fr-FR': 'vers {0}'
-        condition: (countries) ->
+      # 'fr-FR': 'vers {0}'
+      called_country: (countries) ->
           if typeof countries is 'string'
             countries = [countries]
           data = @cdr.rating_info ?= validate @cdr.remote_number
           return data?.country in countries
 
-      called_emergency:
-        name:
-          'fr-FR': 'urgences'
-        condition: ->
+      # 'fr-FR': 'urgences'
+      called_emergency: ->
           if @cdr.emergency then true else false
 
-      called_onnet:
-        name:
-          'fr-FR': 'sur le réseau'
-        condition: ->
+      # 'fr-FR': 'sur le réseau'
+      called_onnet: ->
           if @cdr.onnet then true else false
 
 Per-call conditions
 
-      atmost_duration: # per_call_at_most_duration
-        name:
-          'fr-FR': "Si l'appel dure moins de {0} secondes"
-        condition: (maximum)->
+      # per_call_at_most_duration
+      # 'fr-FR': "Si l'appel dure moins de {0} secondes"
+      atmost_duration: (maximum) ->
           @cdr.duration < maximum
 
-      is_free:
-        name:
-          'fr-FR': "Si l'appel est gratuit"
-        condition: ->
+      # 'fr-FR': "Si l'appel est gratuit"
+      is_free: ->
           @cdr.actual_amount is 0
 
-      atmost_amount: # per_call_at_most_amount
-        name:
-          'fr-FR': "Si l'appel coûte moins de {0}"
-        condition: (maximum)->
+      # per_call_at_most_amount
+      # 'fr-FR': "Si l'appel coûte moins de {0}"
+      atmost_amount: (maximum) ->
           @cdr.actual_amount < maximum
+
+Per-call functions
+
+      # 'fr-FR': "La durée de l'appel"
+      duration: ->
+        @cdr.duration
+
+      # 'fr-FR': "Le montant de l'appel"
+      amount: ->
+        @cdr.actual_amount
 
 Up-to
 -----
@@ -281,19 +236,16 @@ The typical setup is:
 - `per_call_up_to` and/or `up_to` are then used to define what parts might be free
 - `free` does the actual computation (and must be called last in the sentence).
 
-      reset_up_to:
-        name:
-          'fr-FR': 'Indépendamment, '
-        action: ->
+      # 'fr-FR': 'Indépendamment, '
+      reset_up_to: ->
           @cdr.up_to = null
           true
 
 Restrict the free part of the call to the first `up_to` seconds of the call.
 
-      per_call_up_to: # atmost_up_to
-        name:
-          'fr-FR': "jusqu'à {0} secondes par appel"
-        action: (up_to) ->
+      # atmost_up_to
+      # 'fr-FR': "jusqu'à {0} secondes par appel"
+      per_call_up_to: (up_to) ->
           @cdr.up_to ?= up_to
 
 Keep the most restrictive (lowest) value
@@ -302,14 +254,10 @@ Keep the most restrictive (lowest) value
           true
 
 The `up_to` command is both an action (it modifies the CDR) and a condition (it does not always return true).
-Still marking it as an action so that it does not show up in the exported conditions.
 
-- per billing period
-
-      up_to:
-        name:
-          'fr-FR': "jusqu'à {0} secondes {1} par facture"
-        action: (total_up_to,counter) ->
+      # 'fr-FR': "jusqu'à {0} secondes {1} (par {2})"
+      up_to: (total_up_to,counter,period) ->
+          counter = counter_period counter, @cdr, period
           [coherent,value] = await @get_counter counter
 
           commands.increment_duration.action.call this, counter
@@ -326,21 +274,10 @@ Keep the most restrictive (lowest) value
           @cdr.up_to = up_to if @cdr.up_to > up_to
           true
 
-- per specific period
-
-      up_to_per:
-        name:
-          'fr-FR': "jusqu'à {0} secondes {1} par {2}"
-        condition: (total_up_to,counter,period) ->
-          name = counter_period counter, @cdr, period
-          commands.up_to.action.call this, total_up_to, name
-
 The actual semantics here are "call is free _up-to_ {the values specified previously in up-to or per-call-up-to}".
 
-      free:
-        name:
-          'fr-FR': "l'appel est gratuit"
-        action: ->
+      # 'fr-FR': "l'appel est gratuit"
+      free: ->
           if @cdr.up_to? and @cdr.duration > @cdr.up_to
             rated = new Rated @cdr
             rated.duration = @cdr.duration-@cdr.up_to
@@ -353,25 +290,13 @@ The actual semantics here are "call is free _up-to_ {the values specified previo
 Actions
 -------
 
-      hide_call:
-        name:
-          'fr-FR': "masquer l'appel"
-        action: ->
+      # 'fr-FR': "masquer l'appel"
+      hide_call: ->
           @cdr.hide_call = true
           true
 
-      stop:
-        name:
-          'fr-FR': '.'
-        action: ->
+      # 'fr-FR': '.'
+      stop: ->
           'over'
 
-    rate = {}
-    for own k,v of commands
-      rate[k] = v.condition ? v.action
-
-    names = {}
-    for own k,v of commands
-      names[k] = v.name
-
-    module.exports = {rate,names,counter_period}
+    module.exports = {commands,counter_period}
