@@ -1,4 +1,4 @@
-    @name = "astonishing-competition:middleware:rating"
+    @name = "astonishing-competition:middleware:setup"
     {debug} = (require 'tangible') @name
 
     Rating = require 'entertaining-crib'
@@ -44,4 +44,6 @@ Prepare counters
       @cfg.blue_rings.Value ?= BlueRing.integer_values
       @cfg.br = BlueRing.run @cfg.blue_rings
 
-  debug 'server_pre: Ready'
+      debug 'server_pre: Ready'
+
+    @include = ->

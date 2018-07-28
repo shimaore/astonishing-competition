@@ -48,3 +48,5 @@ Compute period
         rated.params.carrier?.carrier ? 'unknown-carrier'
 
       return
+
+    @include = ->
