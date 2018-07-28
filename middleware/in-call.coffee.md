@@ -21,12 +21,11 @@ Compute period
 
     @server_pre = ->
 
-
       if @cfg.aggregation?.plans?
         plans_db = new PouchDB @cfg.aggregation.plans
       else
-        debug 'Missing cfg.aggregation.plans'
-
+        unless @cfg.route_non_billable_calls
+          throw new Error 'Missing cfg.aggregation.plans'
 
 Call handler
 ============
@@ -35,27 +34,32 @@ Call handler
 
       @debug 'Start'
 
+These are all preconditions. None of them should fail unless the proper modules are not loaded.
+(In other words these all indicate developer errrors.)
+
+      fail = =>
+        await @respond '500 Unable to rate'
+        @direction 'failed'
+
       unless @session?
-        heal @action 'respond', '500 No session, unable to rate'
+        @debug.dev 'No session'
+        fail()
         return
 
       unless plans_db
         unless @cfg.route_non_billable_calls
-          @debug 'Unable to rate, no plans_db or Remote/Local PouchDB'
-          await @respond '500 Unable to rate'
-          @direction 'failed'
+          @debug.dev 'No plans_db'
+          fail()
         return
 
       unless @session.rated?
-        @debug 'No session.rated'
-        await @respond '500 Unable to rate'
-        @direction 'failed'
+        @debug.dev 'No session.rated'
+        fail()
         return
 
       unless @session.rated.params?
-        @debug 'No session.rated.params'
-        await @respond '500 Unable to rate'
-        @direction 'failed'
+        @debug.dev 'No session.rated.params'
+        fail()
         return
 
 Remember, we expect to have:
