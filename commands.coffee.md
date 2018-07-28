@@ -206,7 +206,7 @@ Per-call conditions
       # per_call_at_most_duration
       # 'fr-FR': "Si l'appel dure moins de {0} secondes"
       atmost_duration: (maximum) ->
-          @cdr.duration < maximum
+          @cdr.duration <= maximum
 
       # 'fr-FR': "Si l'appel est gratuit"
       is_free: ->
@@ -215,7 +215,7 @@ Per-call conditions
       # per_call_at_most_amount
       # 'fr-FR': "Si l'appel coûte moins de {0}"
       atmost_amount: (maximum) ->
-          @cdr.actual_amount < maximum
+          @cdr.actual_amount <= maximum
 
 Per-call functions
 
