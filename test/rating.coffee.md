@@ -22,6 +22,7 @@
         seen = 0
 
         trigger = null
+        plans_db = new PouchDB 'plans'
         ctx =
           cfg:
             period_of: (stamp,timezone) -> # default from huge-play/middleware/setup
@@ -32,12 +33,15 @@
               source: 'local'
               tables: PouchDB
             aggregation:
-              PlansDB: new PouchDB 'plans'
+              PlansDB: plans_db
               LocalDB: (name) -> new PouchDB name
 
           ornaments_commands:
-            display: ->
+            display: (args...) ->
+              console.log args...
               true
+            tag: (tag) ->
+              @tag = tag
 
           session:
             cdr_direction:'egress'
@@ -51,6 +55,7 @@ Client-side data
               rating:
                 '2016-01-01':
                   table: 'client+current'
+                  plan: 'youpi'
               timezone: 'UTC'
               incall_script:
                 language: 'v2'
@@ -93,6 +98,20 @@ Client-side data
         m3.server_pre?.call ctx, ctx
         ctx.should.have.property 'cfg'
         ctx.cfg.should.have.property 'rating'
+
+        await plans_db.put
+          _id: 'plan:youpi'
+          script:
+            language: 'v2'
+            script: '''
+              lun_ven = weekdays(1,2,3,4,5),
+              samedi = weekdays(6),
+              dimanche = weekdays(0),
+
+              if lun_ven then tag('everyone'),
+              if samedi then tag('dedicated'),
+              if dimanche then ( tag('closed'), display("Are you really testing on a Sunday??") )
+            '''
 
         db = new PouchDB 'rates-client+current'
         await db.put
@@ -163,6 +182,8 @@ Wait for cdr-report to be sent
 
         ctx.session.rated.carrier.should.have.property 'duration', 33
         ctx.session.rated.carrier.should.have.property 'amount', 0.55
+
+        ctx.should.have.property('tag').that.is.a.string
 
         (await ctx.cfg.br.get_counter "α unknown-account #{per} cat PER #{day}").should.have.property 1, 33
 
