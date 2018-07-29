@@ -174,11 +174,10 @@ Counters are handled at the `sub_account` level (although we could also have `ac
 
           plan_script = await get_ornaments plans_db, client_cdr
 
-TODO: Complement with CGU
-
-          plan_fun = try compile plan_script, private_commands if plan_script?
-          unless plan_fun?
-            debug.dev 'Invalid plan script (ignored)', plan_script
+          if plan_script?
+            plan_fun = try compile plan_script, private_commands catch error
+            unless plan_fun?
+              debug.dev 'Invalid plan script (ignored)', error, plan_script
           plan_fun ?= ->
 
           debug 'handle_final: client', duration

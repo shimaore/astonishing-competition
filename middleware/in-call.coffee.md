@@ -106,10 +106,15 @@ Ornaments might be set on the endpoint (client-side) to add decisions as to whet
 
       private_commands = build_commands.call this
 
-      plan_fun = try compile plan_script, private_commands if plan_script?
+      if plan_script?
+        plan_fun = try compile plan_script, private_commands catch error
+        unless plan_fun?
+          debug.dev 'Invalid plan script (ignored)', error, plan_script
       plan_fun ?= ->
 
-      private_fun = try compile private_script, private_commands
+      private_fun = try compile private_script, private_commands catch error
+      unless private_fun?
+        debug.dev 'Invalid private script (ignored)', error, private_script
       private_fun ?= ->
 
 Private changes are saved in the counters, but do not update the "official" counters (i.e. those used for billing).
