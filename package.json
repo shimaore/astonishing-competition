@@ -19,7 +19,7 @@
     "bluebird": "^3.5.1",
     "ccnq4-pouchdb": "^1.1.2",
     "entertaining-crib": "^6.1.0",
-    "flat-ornament": "^4.0.2",
+    "flat-ornament": "^4.1.0",
     "lru-cache": "^4.1.3",
     "marked-summer": "^1.1.3",
     "moment": "^2.22.2",
