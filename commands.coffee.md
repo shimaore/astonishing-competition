@@ -12,7 +12,7 @@ The code should also include tools to:
 
     {validate} = require 'numbering-plans'
     Rated = require 'entertaining-crib/rated'
-    moment = require 'moment-timezone'
+    Moment = require 'moment-timezone'
 
 Period
 ------
@@ -64,7 +64,7 @@ Cache/memoize
       if cdr.period[period]?
         return cdr.period[period]
 
-      cdr.period[period] = moment cdr.connect_stamp
+      cdr.period[period] = Moment cdr.connect_stamp
         .tz cdr.timezone
         .format period
 
@@ -286,6 +286,46 @@ The actual semantics here are "call is free _up-to_ {the values specified previo
           else
             @cdr.actual_amount = 0
           true
+
+Time-based conditions
+---------------------
+
+Weekday condition
+
+      weekdays: (days...) ->
+        now = Moment @cdr.connect_stamp
+        if @cdr.timezone?
+          now = now.tz @cdr.timezone
+
+        now = now.day()
+
+        if days.length > 0
+          now in days
+        else
+          now
+
+Time condition
+
+      time: (start,end) ->
+        @debug 'time', start, end
+        now = Moment @cdr.connect_stamp
+        if @cdr.timezone?
+          now = now.tz @cdr.timezone
+
+        now = now.format 'HH:mm'
+
+        unless start? and end?
+          return now
+
+start: '09:00', end: '17:00'
+
+        if start <= end
+          start <= now <= end
+
+start: '18:00', end: '08:00'
+
+        else
+          start <= now or now <= end
 
 Actions
 -------
