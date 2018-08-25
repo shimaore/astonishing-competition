@@ -18,7 +18,10 @@ Execute the ornaments
 
         ctx = {
           cdr
-          update_counter: (name,value,expire) => @br.update_counter (pr name), value, expire ? default_expire()
+          update_counter: (name,value,expire) =>
+            name = pr name
+            @br.setup_counter name, expire ? default_expire()
+            @br.update_counter name, value
           get_counter: (name) => @br.get_counter (pr name)
         }
         await fun.call ctx
