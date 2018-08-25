@@ -15,8 +15,7 @@
     "huge-play": ">=34.0.0"
   },
   "dependencies": {
-    "blue-rings": "^1.1.1",
-    "bluebird": "^3.5.1",
+    "blue-rings": "^2.0.3",
     "ccnq4-pouchdb": "^1.1.2",
     "entertaining-crib": "^6.1.0",
     "flat-ornament": "^4.1.1",
