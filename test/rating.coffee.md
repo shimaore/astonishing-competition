@@ -35,6 +35,7 @@
             aggregation:
               PlansDB: plans_db
               LocalDB: (name) -> new PouchDB name
+            prefix_admin: ''
 
           ornaments_commands:
             display: (args...) ->

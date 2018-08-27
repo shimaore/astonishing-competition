@@ -24,13 +24,7 @@
 
     seconds = 1000
 
-Save in a local PouchDB file, and replicate to upstream.
-
-    LocalDB = null
-
 Compute period
-
-    plans_db = null
 
     @server_pre = ->
 
@@ -38,20 +32,15 @@ Compute period
         unless @cfg.route_non_billable_calls
           throw new Error 'Missing cfg.aggregation'
 
-      {plans,local,remote} = @cfg.aggregation
-
-Configure `plans_db`
-
-      plans_db = @cfg.aggregation.PlansDB
-      plans_db = new PouchDB plans if plans?
+      {local,remote} = @cfg.aggregation
+      remote ?= @cfg.prefix_source # defined by nimble-direction
 
 Configure `LocalDB`
 
-* cfg.aggregation.remote (string,URI,required) base URI for remote invoicing databases
-* cfg.aggregation.local (string,path) directory where CDRs are stored if cfg.aggregation.remote fails. The directory must be present.
+* cfg.aggregation.remote (string,URI) base URI for remote invoicing databases. Defaults to cfg.prefix_source (which itself defaults to the value of the `NIMBLE_PREFIX_SOURCE` environemnt variable).
+* cfg.aggregation.local (string,path) directory where local CDRs are stored if cfg.aggregation.remote fails. The directory must be present if the name is used (it is not created).
 
-
-      LocalDB = @cfg.aggregation.LocalDB ? (name) =>
+      @cfg.aggregation.LocalDB ?= (name) =>
         db = cache.get name
         return db if db?
 
@@ -96,9 +85,9 @@ These are all preconditions. None of them should fail unless the proper modules 
         fail()
         return
 
-      unless plans_db and LocalDB
+      unless @cfg.aggregation?.PlansDB and @cfg.aggregation?.LocalDB
         unless @cfg.route_non_billable_calls
-          @debug 'No plans_db or LocalDB'
+          @debug 'No PlansDB nor LocalDB'
           fail()
         return
 
@@ -172,7 +161,7 @@ Counters are handled at the `sub_account` level (although we could also have `ac
           private_commands = build_commands.call this
           executor = new Executor counters_prefix, private_commands, @cfg.br
 
-          plan_script = await get_ornaments plans_db, client_cdr
+          plan_script = await get_ornaments @cfg.aggregation.PlansDB, client_cdr
 
           if plan_script?
             plan_fun = try compile plan_script, private_commands catch error

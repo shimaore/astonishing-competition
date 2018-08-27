@@ -15,23 +15,6 @@
 
     seconds = 1000
 
-Compute period
-
-    plans_db = null
-
-    @server_pre = ->
-
-      unless @cfg.aggregation?
-        unless @cfg.route_non_billable_calls
-          throw new Error 'Missing cfg.aggregation'
-
-      {plans} = @cfg.aggregation
-
-Configure `plans_db`
-
-      plans_db = @cfg.aggregation.PlansDB
-      plans_db = new PouchDB plans if plans?
-
 Call handler
 ============
 
@@ -51,9 +34,9 @@ These are all preconditions. None of them should fail unless the proper modules 
         fail()
         return
 
-      unless plans_db
+      unless @cfg.aggregation?.PlansDB
         unless @cfg.route_non_billable_calls
-          @debug.dev 'No plans_db'
+          @debug.dev 'No PlansDB'
           fail()
         return
 
@@ -87,7 +70,7 @@ Rating script
 
       @debug 'Preprocessing client', client_cdr
 
-      plan_script = await get_ornaments plans_db, client_cdr
+      plan_script = await get_ornaments @cfg.aggregation.PlansDB, client_cdr
 
 Ornaments might be set on the endpoint (client-side) to add decisions as to whether the call should proceed or not, or be interrupted at some point.
 
