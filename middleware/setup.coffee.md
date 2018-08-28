@@ -45,32 +45,32 @@
             """
           reduce: '_count'
 
-    replicate_rating_tables = foot ->
+    replicate_rating_tables = foot (cfg) ->
 
 Get the list of tables used in provisioning.
 
-      await @cfg
+      await cfg
         .push rating_tables()
         .catch (error) ->
           debug.dev 'Inserting rating-tables couchapp failed (ignored).', error.stack ? JSON.stringify error
 
-      {rows} = await @cfg.prov.query 'rating/tables',
+      {rows} = await cfg.prov.query 'rating/tables',
         reduce: true
         group: true
 
 We map the table name to a database name by applying a prefix, cfg.rating.prefix, which defaults to `rates-`.
 
-      prefix = @cfg.rating?.prefix ? DEFAULT_RATING_PREFIX
+      prefix = cfg.rating?.prefix ? DEFAULT_RATING_PREFIX
 
-      RatingPouchDB = PouchDB.defaults prefix: @cfg.prefix_admin
+      RatingPouchDB = PouchDB.defaults prefix: cfg.prefix_admin
 
       for {key} in rows
         try
           name = "#{prefix}#{key}"
           target = new RatingPouchDB name
-          await @cfg.reject_tombstones target
+          await cfg.reject_tombstones target
           await target.close()
-          await @cfg.replicate name
+          await cfg.replicate name
         catch error
           debug.dev "Unable to replicate #{name} database.", error.stack ? JSON.stringify error
 
@@ -94,11 +94,11 @@ Replicate the `rates` databases.
 
 The list is updated at startup,
 
-      do replicate_rating_tables.bind(this)
+      replicate_rating_tables @cfg
 
 and every 24h thereafter.
 
-      timer = setInterval replicate_rating_tables.bind(this), 24*60*60*1000
+      timer = setInterval ( => replicate_rating_tables @cfg ), 24*60*60*1000
 
       debug 'config: Ready'
 
