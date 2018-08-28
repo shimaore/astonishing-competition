@@ -187,7 +187,7 @@ Do not store CDRs for calls that must be hidden (e.g. emergency calls in most ju
             unless cdr.hide_call
 
               debug "LocalDB(#{client_database}).put", cdr
-              await LocalDB(client_database).put cdr
+              await @cfg.aggregation.LocalDB(client_database).put cdr
 
           catch error
             debug.dev "safely_write client: #{error.stack ? JSON.stringify error}", client_database
@@ -210,7 +210,7 @@ A rated `carrier` object, saved into the rated-database for the carrier.
             carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
 
             debug "LocalDB(#{carrier_database}).put", cdr
-            await LocalDB(carrier_database).put cdr
+            await @cfg.aggregation.LocalDB(carrier_database).put cdr
 
           catch error
             debug.dev "safely_write carrier: #{error.stack ? JSON.stringify error}", carrier_database
