@@ -1,5 +1,5 @@
     @name = "astonishing-competition:middleware:setup"
-    {debug} = (require 'tangible') @name
+    {debug,foot} = (require 'tangible') @name
 
     Rating = require 'entertaining-crib'
     PouchDB = require 'ccnq4-pouchdb'
@@ -19,11 +19,12 @@
         debug 'Dispose of', key
         value?.close?()
 
-    yesterday = Date.now()-24*60*60*1000
-    today = new Date(yesterday).toJSON()[0...10]
-    debug "Replication will consider the last table before #{today} and any after that."
 
-    rating_tables =
+    rating_tables = ->
+      yesterday = Date.now()-24*60*60*1000
+      today = new Date(yesterday).toJSON()[0...10]
+      debug "Replication will consider the last table before #{today} and any after that."
+
       _id: '_design/rating'
       language: 'coffeescript'
       views:
@@ -44,26 +45,12 @@
             """
           reduce: '_count'
 
-At config time (i.e. before starting FreeSwitch)
--------
-
-    @config = ->
-
-      unless @cfg.prefix_admin? and @cfg.aggregation?
-        debug.dev 'config: Skipping'
-        return
-
-Replicate the `plans` database (or whatever it's called in cfg.aggregation.plans).
-
-      @cfg.aggregation.plans ?= 'plans'
-      await @cfg.replicate @cfg.aggregation.plans
-
-Replicate the `rates` databases.
+    replicate_rating_tables = foot ->
 
 Get the list of tables used in provisioning.
 
       await @cfg
-        .push rating_tables
+        .push rating_tables()
         .catch (error) ->
           debug.dev 'Inserting rating-tables couchapp failed (ignored).', error.stack ? JSON.stringify error
 
@@ -80,17 +67,45 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
       for {key} in rows
         try
           name = "#{prefix}#{key}"
-          target = new RatingPouchDB name, prefix: @cfg.prefix_admin
+          target = new RatingPouchDB name
           await @cfg.reject_tombstones target
           await target.close()
           await @cfg.replicate name
         catch error
           debug.dev "Unable to replicate #{name} database.", error.stack ? JSON.stringify error
 
+At config time (i.e. before starting FreeSwitch)
+-------
+
+    timer = null
+
+    @config = ->
+
+      unless @cfg.prefix_admin? and @cfg.aggregation?
+        debug.dev 'config: Skipping'
+        return
+
+Replicate the `plans` database (or whatever it's called in cfg.aggregation.plans).
+
+      @cfg.aggregation.plans ?= 'plans'
+      await @cfg.replicate @cfg.aggregation.plans
+
+Replicate the `rates` databases.
+
+The list is updated at startup,
+
+      do replicate_rating_tables.bind(this)
+
+and every 24h thereafter.
+
+      timer = setInterval replicate_rating_tables.bind(this), 24*60*60*1000
+
       debug 'config: Ready'
 
 At server startup time
 ----------------------
+
+    br = null
 
     @server_pre = ->
 
@@ -124,8 +139,13 @@ Prepare counters
 
       @cfg.blue_rings ?= {}
       @cfg.blue_rings.Value ?= BlueRing.integer_values
-      @cfg.br = BlueRing.run @cfg.blue_rings
+      @cfg.br = br = BlueRing.run @cfg.blue_rings
 
       debug 'server_pre: Ready'
 
     @include = ->
+
+    @end = ->
+      clearInterval timer if timer?
+      br?.end()
+      return
