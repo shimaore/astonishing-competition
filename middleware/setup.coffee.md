@@ -19,18 +19,29 @@
         debug 'Dispose of', key
         value?.close?()
 
+    yesterday = Date.now()-24*60*60*1000
+    today = new Date(yesterday).toJSON()[0...10]
+    debug "Replication will consider the last table before #{today} and any after that."
+
     rating_tables =
       _id: '_design/rating'
       language: 'coffeescript'
       views:
         tables:
-          map: '''
+          map: """
             (doc) ->
               return if doc.disabled
               return unless doc.rating?
-              for own k, v of doc.rating
-                emit v.table if v.table?
-            '''
+              dates = Object.keys(doc.rating).sort()
+              last = null
+              for d in dates
+                v = doc.rating[d].table
+                if d < '#{today}'
+                  last = v
+                else
+                  emit v if v?
+              emit last if last?
+            """
           reduce: '_count'
 
 At config time (i.e. before starting FreeSwitch)
