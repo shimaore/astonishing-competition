@@ -26,6 +26,7 @@
         tables:
           map: '''
             (doc) ->
+              return if doc.disabled
               return unless doc.rating?
               for own k, v of doc.rating
                 emit v.table if v.table?
