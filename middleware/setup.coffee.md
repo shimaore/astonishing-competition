@@ -66,6 +66,7 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
 
       for {key} in rows
         try
+          debug 'Requesting replication for', key
           name = "#{prefix}#{key}"
           target = new RatingPouchDB name
           await cfg.reject_tombstones target
@@ -73,6 +74,8 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
           await cfg.replicate name
         catch error
           debug.dev "Unable to replicate #{name} database.", error.stack ? JSON.stringify error
+
+      return
 
 At config time (i.e. before starting FreeSwitch)
 -------
@@ -94,11 +97,11 @@ Replicate the `rates` databases.
 
 The list is updated at startup,
 
-      replicate_rating_tables @cfg
+      await replicate_rating_tables @cfg
 
 and every 24h thereafter.
 
-      timer = setInterval ( => replicate_rating_tables @cfg ), 24*60*60*1000
+      timer = setInterval ( => await replicate_rating_tables @cfg ), 24*60*60*1000
 
       debug 'config: Ready'
 
