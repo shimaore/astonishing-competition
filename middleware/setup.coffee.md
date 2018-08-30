@@ -4,7 +4,6 @@
     Rating = require 'entertaining-crib'
     PouchDB = require 'ccnq4-pouchdb'
     LRU = require 'lru-cache'
-    BlueRing = require 'blue-rings'
 
 * cfg.rating (object, optional) parameters for the rating of calls
 * cfg.rating.source (string) name of the cfg.rating.tables source. Default: `default`
@@ -137,12 +136,6 @@ Prepare rating databases access (use local replica)
       @cfg.rating = new Rating
         source: @cfg.rating?.source ? DEFAULT_RATING_SOURCE
         rating_tables: @cfg.rating?.tables ? tables
-
-Prepare counters
-
-      @cfg.blue_rings ?= {}
-      @cfg.blue_rings.Value ?= BlueRing.integer_values
-      @cfg.br = br = BlueRing.run @cfg.blue_rings
 
       debug 'server_pre: Ready'
 

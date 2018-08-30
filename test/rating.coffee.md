@@ -4,6 +4,7 @@
       .plugin require 'pouchdb-adapter-memory'
       .plugin require 'pouchdb-replication'
       .defaults adapter:'memory'
+    BlueRing = require 'blue-rings'
     moment = require 'moment-timezone'
 
     sleep = (timeout) -> new Promise (resolve) -> setTimeout resolve, timeout
@@ -92,6 +93,7 @@ Client-side data
 
         debug 'server_pre'
         s1.server_pre?.call ctx, ctx
+        ctx.cfg.br = BlueRing.run host: 'A'
         after -> ctx.cfg.br.end()
         s2.server_pre?.call ctx, ctx
         m1.server_pre?.call ctx, ctx

@@ -15,7 +15,6 @@
     "huge-play": ">=34.0.0"
   },
   "dependencies": {
-    "blue-rings": "^2.0.4",
     "ccnq4-pouchdb": "^1.1.2",
     "entertaining-crib": "^6.1.0",
     "flat-ornament": "^4.1.1",
@@ -30,6 +29,7 @@
     "uuid": "^3.3.2"
   },
   "devDependencies": {
+    "blue-rings": "^2.0.4",
     "chai": "^4.1.2",
     "coffeescript": "^2.3.1",
     "jison": "^0.4.18",
