@@ -25,7 +25,7 @@ Hangs the call up.
 
 Counter condition based on `incall_values`
 
-        incall_atmost: (maximum_name,value,period) ->
+        incall_atmost: (maximum_name,value) ->
           maximum = incall_values[maximum_name]
           return false unless maximum?
           return false unless 'number' is typeof maximum
