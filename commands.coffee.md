@@ -260,7 +260,7 @@ The `up_to` command is both an action (it modifies the CDR) and a condition (it 
           counter = counter_period counter, @cdr, period
           [coherent,value] = await @get_counter counter
 
-          commands.increment_duration.action.call this, counter
+          await commands.increment_duration.call this, counter
 
 Do not apply free-call if the ceiling was already met at the start of the call.
 
@@ -307,7 +307,6 @@ Weekday condition
 Time condition
 
       time: (start,end) ->
-        @debug 'time', start, end
         now = Moment @cdr.connect_stamp
         if @cdr.timezone?
           now = now.tz @cdr.timezone

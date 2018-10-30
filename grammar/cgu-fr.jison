@@ -20,9 +20,12 @@ NAME        [A-Za-z][\w-]+
 
 /* frcgu */
 
-"Conformément à la réglementation, les appels d'urgences ne sont pas facturés."   return 'EMERGENCY'
+"Conformément à la réglementation"   return 'REGULATORY'
+"d'urgences"                         return 'EMERGENCY'
+"ne sont pas facturés"               return 'HIDE_CALL'
 
 "Les appels"                         return 'CALLS'
+"les appels"                         return 'CALLS'
 "sur le réseau"                      return 'CALLED_ONNET'
 "vers les fixes"                     return 'CALLED_FIXED'
 "vers les fixes"                     return 'CALLED_FIXED'
@@ -138,54 +141,57 @@ NAME        [A-Za-z][\w-]+
 %% /* grammar */
 
 start
-  : hide_emergency fr_cgu EOF -> async function () { if ($2()) return; await $3(); }
+  : hide_emergency fr_cgu EOF { return async function () { if (await $1(this)) return; await $2(this); } }
   ;
 
 hide_emergency
-  : EMERGENCY -> async function () { var emergency = yy.valid_op.called_emergency(); if (emergency) { yy.valid_op.hide_call() } return emergency; }
+  : REGULATORY fr_cgu_sentence -> $2
   ;
 
-fr_cgu
-  : fr_cgu fr_cgu_sentence -> async function () { var cond = await $1(); if (!cond) return; return await $2() }
+fr_cgu /* For now we execute all sentences in the order they are presented (except for the first sentence, about emergency calls,
+          see above). This probably should be modified to include more generic "return"-like code. */
+  : fr_cgu fr_cgu_sentence -> async function (ctx) { await $1(ctx); await $2(ctx) }
   | fr_cgu_sentence -> $1
   ;
 
 fr_cgu_sentence
-  : sentence '.' -> async function () { await yy.op.reset_up_to(); return await $1() }
+  : sentence '.' -> async function (ctx) { await yy.op.reset_up_to.call(ctx); return await $1(ctx); }
   ;
 
-sentence
-  : CALLS conditions outcomes             -> async function () { var cond = await $2(); if (cond) { await $3() }; }
-  | CALLS conditions outcomes conditions  -> async function () { var cond = (await $2()) && (await $4()); if (cond) { await $3 }; }
-  | CALLS outcomes conditions             -> async function () { var cond =  await $3(); if (cond) { await $2() }; }
+sentence /* return true if terminated */
+  : CALLS conditions outcomes             -> async function (ctx) { var cond = await $2(ctx);                      if (cond) { await $3(ctx) }; return cond }
+  | CALLS outcomes conditions             -> async function (ctx) { var cond = await $3(ctx);                      if (cond) { await $2(ctx) }; return cond }
+  | CALLS conditions outcomes conditions  -> async function (ctx) { var cond = (await $2(ctx)) && (await $4(ctx)); if (cond) { await $3(ctx) }; return cond }
   ;
 
 conditions
-  : conditions condition -> async function () { var cond = await $1(); return cond && await $2() }
+  : conditions condition -> async function (ctx) { return (await $1(ctx)) && (await $2(ctx)) }
   | condition -> $1
   ;
 
 outcomes
-  : outcomes outcome -> $1.concat($2)
-  | outcome -> [$1]
+  : outcomes outcome     -> async function (ctx) { await $1(ctx); await $2(ctx) }
+  | outcome -> $1
   ;
 
 condition
-  : CALLED_ONNET            -> yy.op.called_onnet
-  | CALLED_ONNET NAME       -> yy.op.called_onnet /* "sur le réseau K-net" */
-  | CALLED_FIXED            -> yy.op.called_fixed
-  | CALLED_FIXED_OR_MOBILE  -> yy.op.called_fixed_or_mobile
-  | CALLED_MOBILE           -> yy.op.called_mobile
-  | TOWARDS countries       -> function () { return yy.op.called_country($2) }
-  | ATMOST callees          { var name = yy.new_name(); $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
-  | ATMOST callees name     { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
-  | ATMOST callees name PER_CYCLE  { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called(name); return await yy.op.at_most($2,name) }}
-  | ATMOST callees period   { var name = yy.new_name(); $$ = async function () { await yy.op.count_called_per(name,$3); return await yy.op.at_most($2,name) }}
-  | ATMOST callees name period     { var name = 'callee_'+$3;  $$ = async function () { await yy.op.count_called_per(name,$4); return await yy.op.at_most_per($2,name,$4) }}
-  | ATMOST duration PER_CALL       {                           $$ = async function () { await yy.op.per_call_up_to($2) }}
-  | ATMOST duration PER_CYCLE      { var name = yy.new_name(); $$ = async function () { await yy.op.increment_duration(name); return await yy.op.up_to($2,name) }}
-  | ATMOST duration name PER_CYCLE -> name = $3;            $$ = [{type:'increment_duration',param:name},{type:'up_to',params:[$2,name]}]
-  | ATMOST duration name period    -> name = $3;            $$ = [{type:'increment_duration_per',params:[name,$4]},{type:'up_to_per',params:[$2,name,$4]}]
+  : CALLED_ONNET              -> function (ctx) { return yy.op.called_onnet.call(ctx) }
+  | CALLED_ONNET names        -> function (ctx) { return yy.op.called_onnet.call(ctx) } /* "sur le réseau K-net" */
+  | CALLED_FIXED              -> function (ctx) { return yy.op.called_fixed.call(ctx) }
+  | CALLED_FIXED_OR_MOBILE    -> function (ctx) { return yy.op.called_fixed_or_mobile.call(ctx) }
+  | CALLED_MOBILE             -> function (ctx) { return yy.op.called_mobile.call(ctx) }
+  | EMERGENCY                 -> function (ctx) { return yy.op.called_emergency.call(ctx) }
+  | TOWARDS countries         -> function (ctx) { return yy.op.called_country.call(ctx,$2) }
+  | ATMOST duration PER_CALL  -> function (ctx) { return yy.op.per_call_up_to.call(ctx,$2) }
+  /* Notice how the names are computed at compilation time, not at evaluation time. */
+  | ATMOST callees                  { var name = 'C'+yy.new_name(); $$ = async function (ctx) { await yy.op.count_called.call(ctx,name);          return await yy.op.at_most.call(ctx,$2,name) }}
+  | ATMOST callees names            { var name = 'C'+$3;            $$ = async function (ctx) { await yy.op.count_called.call(ctx,name);          return await yy.op.at_most.call(ctx,$2,name) }}
+  | ATMOST callees names PER_CYCLE  { var name = 'C'+$3;            $$ = async function (ctx) { await yy.op.count_called.call(ctx,name);          return await yy.op.at_most.call(ctx,$2,name) }}
+  | ATMOST callees period           { var name = 'C'+yy.new_name(); $$ = async function (ctx) { await yy.op.count_called.call(ctx,name,$3);       return await yy.op.at_most.call(ctx,$2,name) }}
+  | ATMOST callees names period     { var name = 'C'+$3;            $$ = async function (ctx) { await yy.op.count_called.call(ctx,name,$4);       return await yy.op.at_most.call(ctx,$2,name,$4) }}
+  | ATMOST duration PER_CYCLE       { var name = 'D'+yy.new_name(); $$ = async function (ctx) { await yy.op.increment_duration.call(ctx,name);    return await yy.op.up_to.call(ctx,$2,name) }}
+  | ATMOST duration names PER_CYCLE { var name = 'D'+$3;            $$ = async function (ctx) { await yy.op.increment_duration.call(ctx,name);    return await yy.op.up_to.call(ctx,$2,name) }}
+  | ATMOST duration names period    { var name = 'D'+$3;            $$ = async function (ctx) { await yy.op.increment_duration.call(ctx,name,$4); return await yy.op.up_to.call(ctx,$2,name,$4) }}
   ;
 
 callees
@@ -219,10 +225,18 @@ country
   ;
 
 outcome
-  : FREE -> [{type:'free'}]
+  : FREE      -> async function (ctx) { await yy.op.free.call(ctx) }
+  | HIDE_CALL -> async function (ctx) { await yy.op.hide_call.call(ctx) }
   ;
 
 /* Constants */
+
+names
+  : names name    -> $1+' '+$2
+  | names string  -> $1+' '+$2
+  | name          -> $1
+  | string        -> $1
+  ;
 
 integer
   : INTEGER   -> parseInt(yytext,10)
@@ -242,6 +256,4 @@ pattern
 
 name
   : NAME      -> yytext
-  | STRING2   -> yytext.substr(1,yytext.length-2)
-  | name NAME -> $1+$2
   ;

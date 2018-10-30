@@ -3,7 +3,7 @@
         parser = new cgu_fr.Parser()
         parser.yy.op = commands
         name = 0
-        parser.yy.new_name = -> "name#{name++}"
+        parser.yy.new_name = -> "##{name++}"
         parser.parse src
 
     cgu_fr = require './cgu-fr'
