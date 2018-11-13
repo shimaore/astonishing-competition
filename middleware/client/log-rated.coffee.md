@@ -56,7 +56,7 @@ Configure `LocalDB`
             db = new PouchDB name, prefix: remote
 
           else
-            @debug.dev "Neither aggregation.local not aggregation.remote, saving CDRs wherever!"
+            debug.dev "Neither aggregation.local not aggregation.remote, saving CDRs wherever!"
             db = new PouchDB name
 
         cache.set name, db
@@ -71,7 +71,7 @@ Call handler
 
     @include = ->
 
-      @debug 'Start'
+      debug 'Start'
 
 These are all preconditions. None of them should fail unless the proper modules are not loaded.
 (In other words these all indicate developer errrors.)
@@ -81,23 +81,23 @@ These are all preconditions. None of them should fail unless the proper modules 
         @direction 'failed'
 
       unless @session?
-        @debug.dev 'No session'
+        debug.dev 'No session'
         fail()
         return
 
       unless @cfg.aggregation?.PlansDB and @cfg.aggregation?.LocalDB
         unless @cfg.route_non_billable_calls
-          @debug 'No PlansDB nor LocalDB'
+          debug 'No PlansDB nor LocalDB'
           fail()
         return
 
       unless @session.rated?
-        @debug.dev 'No session.rated'
+        debug.dev 'No session.rated'
         fail()
         return
 
       unless @session.rated.params?
-        @debug.dev 'No session.rated.params'
+        debug.dev 'No session.rated.params'
         fail()
         return
 
@@ -132,13 +132,13 @@ However `session.winner` might be set _after_ we get called, depending on timing
 
 Rebuild @session.rated, similarly to what is done in ./rating
 
-        @debug 'Client  is ', params.client?._id
-        @debug 'Carrier is ', params.carrier?._id
+        debug 'Client  is ', params.client?._id
+        debug 'Carrier is ', params.carrier?._id
 
         @session.rated = await @cfg.rating
           .rate params
           .catch (error) =>
-            @debug "rating_rate failed: #{error.stack ? error}"
+            debug "rating_rate failed: #{error.stack ? error}"
             null
 
         @session.rated ?= {}
@@ -150,7 +150,7 @@ For the client
         client_cdr = @session.rated.client
         if client_cdr?
 
-          @debug 'Preprocessing client', client_cdr
+          debug 'Preprocessing client', client_cdr
 
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 

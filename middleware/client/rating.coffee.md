@@ -25,13 +25,13 @@ This code may be called twice:
         client: @session.endpoint # from huge-play (egress-only since 15.x)
         carrier: @session.winner # from tough-rate
 
-      @debug 'Client  is ', params.client?._id
-      @debug 'Carrier is ', params.carrier?._id
+      debug 'Client  is ', params.client?._id
+      debug 'Carrier is ', params.carrier?._id
 
       @session.rated = await @cfg.rating
         .rate params
         .catch (error) =>
-          @debug "rating_rate failed: #{error.stack ? error}"
+          debug "rating_rate failed: #{error.stack ? error}"
           null
 
       @session.rated ?= {}
@@ -47,15 +47,15 @@ So in the best case we get:
 This is the case e.g. for calls to voicemail.
 
         when not params.direction?
-          @debug 'Routing non-billable call: no direction provided'
+          debug 'Routing non-billable call: no direction provided'
 
 This is the case e.g. for centrex-to-centrex (internal) calls.
 
         when params.direction is 'ingress' and not params.from? and not params.to?
-          @debug 'Routing non-billable call: no billable number on ingress'
+          debug 'Routing non-billable call: no billable number on ingress'
 
         when params.direction is 'centrex-internal'
-          @debug 'Routing internal Centrex call'
+          debug 'Routing internal Centrex call'
 
 System-wide configuration accepting non-billable calls.
 
@@ -65,18 +65,18 @@ System-wide configuration accepting non-billable calls.
 - ingress
 
             when params.direction is 'ingress' and @cfg.route_non_billable_ingress_calls
-              @debug 'Routing non-billable ingress call: configuration allowed'
+              debug 'Routing non-billable ingress call: configuration allowed'
 
 - both directions
 
             when @cfg.route_non_billable_calls
-              @debug 'Routing non-billable call: configuration allowed'
+              debug 'Routing non-billable call: configuration allowed'
 
 Reject non-billable (client-side) calls otherwise.
 
             else
 
-              @debug 'Unable to rate', @session.dialplan
+              debug 'Unable to rate', @session.dialplan
               await @respond '500 Unable to rate'
               @direction 'unable-to-rate'
               return
@@ -84,7 +84,7 @@ Reject non-billable (client-side) calls otherwise.
 Accept billable calls.
 
         else
-          @debug 'Routing'
+          debug 'Routing'
 
       @session.rated.client ?= new Rated
         billable_number: 'none'
@@ -102,6 +102,6 @@ Accept billable calls.
         per: 60
         divider: 1
 
-      @debug 'session.rated', @session.rated
+      debug 'session.rated', @session.rated
 
-      @debug 'Ready'
+      debug 'Ready'

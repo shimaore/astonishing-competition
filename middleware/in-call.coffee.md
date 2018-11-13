@@ -20,7 +20,7 @@ Call handler
 
     @include = ->
 
-      @debug 'Start'
+      debug 'Start'
 
 These are all preconditions. None of them should fail unless the proper modules are not loaded.
 (In other words these all indicate developer errrors.)
@@ -30,23 +30,23 @@ These are all preconditions. None of them should fail unless the proper modules 
         @direction 'failed'
 
       unless @session?
-        @debug.dev 'No session'
+        debug.dev 'No session'
         fail()
         return
 
       unless @cfg.aggregation?.PlansDB
         unless @cfg.route_non_billable_calls
-          @debug.dev 'No PlansDB'
+          debug.dev 'No PlansDB'
           fail()
         return
 
       unless @session.rated?
-        @debug.dev 'No session.rated'
+        debug.dev 'No session.rated'
         fail()
         return
 
       unless @session.rated.params?
-        @debug.dev 'No session.rated.params'
+        debug.dev 'No session.rated.params'
         fail()
         return
 
@@ -62,13 +62,13 @@ Client setup
       client_cdr = @session.rated.client
 
       unless client_cdr?
-        @debug 'No session.rated.client'
+        debug 'No session.rated.client'
         return
 
 Rating script
 -------------
 
-      @debug 'Preprocessing client', client_cdr
+      debug 'Preprocessing client', client_cdr
 
       plan_script = await get_ornaments @cfg.aggregation.PlansDB, client_cdr
 
@@ -82,10 +82,10 @@ Ornaments might be set on the endpoint (client-side) to add decisions as to whet
       private_script ?= endpoint?.rating_ornaments # legacy
 
       unless private_script?
-        @debug 'No private script'
+        debug 'No private script'
         return
 
-      @debug 'Processing (private) in-call script.'
+      debug 'Processing (private) in-call script.'
 
       private_commands = build_commands.call this
 
@@ -147,7 +147,7 @@ Execute the script a first time when the call is routing / in-progress.
         initial_duration = client_cdr?.rating_data?.subsequent?.duration
 
       if not initial_duration?
-        @debug.csr 'No initial duration available'
+        debug.csr 'No initial duration available'
         await @respond '500 no initial duration available'
         @direction 'failed'
         return
@@ -194,7 +194,7 @@ Note: we always compute the conditions at the _end_ of the _upcoming_ interval, 
         @call.removeListener 'CHANNEL_ANSWER', on_answer
         running = false
 
-      @debug '(Private) in-call script is ready.'
+      debug '(Private) in-call script is ready.'
 
 End-of-call handler
 ===================
