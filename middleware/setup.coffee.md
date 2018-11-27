@@ -1,9 +1,9 @@
     @name = "astonishing-competition:middleware:setup"
     {debug,foot} = (require 'tangible') @name
+    ec = encodeURIComponent
 
     Rating = require 'entertaining-crib'
-    PouchDB = require 'ccnq4-pouchdb'
-    LRU = require 'lru-cache'
+    CouchDB = require 'most-couchdb'
 
 * cfg.rating (object, optional) parameters for the rating of calls
 * cfg.rating.source (string) name of the cfg.rating.tables source. Default: `default`
@@ -11,13 +11,7 @@
 
     DEFAULT_RATING_SOURCE = 'default'
     DEFAULT_RATING_PREFIX = 'rates-'
-
-    cache = LRU
-      max: 200
-      dispose: (key,value) ->
-        debug 'Dispose of', key
-        value?.close?()
-
+    DEFAULT_RATING_PLANS  = 'plans'
 
     rating_tables = ->
       yesterday = Date.now()-24*60*60*1000
@@ -53,7 +47,7 @@ Get the list of tables used in provisioning.
         .catch (error) ->
           debug.dev 'Inserting rating-tables couchapp failed (ignored).', error.stack ? JSON.stringify error
 
-      {rows} = await cfg.prov.query 'rating/tables',
+      rows = (new CouchDB cfg.provisioning).query 'rating', 'tables',
         reduce: true
         group: true
 
@@ -61,15 +55,14 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
 
       prefix = cfg.rating?.prefix ? DEFAULT_RATING_PREFIX
 
-      RatingPouchDB = PouchDB.defaults prefix: cfg.prefix_admin
-
-      for {key} in rows
+      await rows.forEach ({key}) ->
         try
           debug 'Requesting replication for', key
           name = "#{prefix}#{key}"
-          target = new RatingPouchDB name
+          uri = "#{cfg.prefix_admin}/#{ec name}"
+          target = new CouchDB uri
           await cfg.reject_tombstones target
-          await target.close()
+          target = null
           await cfg.replicate name
         catch error
           debug.dev "Unable to replicate #{name} database.", error.stack ? JSON.stringify error
@@ -83,14 +76,14 @@ At config time (i.e. before starting FreeSwitch)
 
     @config = ->
 
-      unless @cfg.prefix_admin? and @cfg.aggregation?
-        debug.dev 'config: Skipping'
+      unless @cfg.prefix_admin?
+        debug.dev 'config: Missing cfg.prefix_admin, Skipping'
         return
 
-Replicate the `plans` database (or whatever it's called in cfg.aggregation.plans).
+Replicate the `plans` database (or whatever it's called in cfg.rating.plans).
 
-      @cfg.aggregation.plans ?= 'plans'
-      await @cfg.replicate @cfg.aggregation.plans
+      rating_plans = @cfg.rating?.plans ? DEFAULT_RATING_PLANS
+      await @cfg.replicate rating_plans
 
 Replicate the `rates` databases.
 
@@ -107,35 +100,27 @@ and every 24h thereafter.
 At server startup time
 ----------------------
 
-    br = null
-
     @server_pre = ->
 
-      unless @cfg.prefix_admin? and @cfg.aggregation?
-        debug.dev 'server_pre: Skipping'
+      unless @cfg.prefix_admin?
+        debug.dev 'server_pre: Missing cfg.prefix_admin. Skipping'
         return
 
-      @cfg.aggregation.plans ?= 'plans'
-      @cfg.aggregation.PlansDB ?= new PouchDB "#{@cfg.prefix_admin}/#{@cfg.aggregation.plans}"
+      rating_plans = @cfg.rating?.plans ? DEFAULT_RATING_PLANS
+      @cfg.rating_plans = "#{@cfg.prefix_admin}/#{rating_plans}"
 
 Prepare rating databases access (use local replica)
 
       prefix = @cfg.rating?.prefix ? DEFAULT_RATING_PREFIX
 
-      RatingPouchDB = PouchDB.defaults prefix: @cfg.prefix_admin
-
-      tables =  (key) ->
+      Tables = (key) =>
         name = "#{prefix}#{key}"
-        db = cache.get name
-        return db if db?
-        db = new RatingPouchDB name
-        cache.set name, db
-        db
-
+        uri = "#{@cfg.prefix_admin}/#{ec name}"
+        new CouchDB uri, true
 
       @cfg.rating = new Rating
         source: @cfg.rating?.source ? DEFAULT_RATING_SOURCE
-        rating_tables: @cfg.rating?.tables ? tables
+        rating_tables: Tables
 
       debug 'server_pre: Ready'
 
@@ -143,5 +128,4 @@ Prepare rating databases access (use local replica)
 
     @end = ->
       clearInterval timer if timer?
-      br?.end()
       return

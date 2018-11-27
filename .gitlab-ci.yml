@@ -1,8 +1,12 @@
 image: node:alpine
 
 build:
+  services:
+  - couchdb
+  variables:
+    COUCHDB_USER: admin
+    COUCHDB_PASSWORD: password
   script:
-  - apk --update add build-base python
   - npm install
   - npm audit
   - npm test

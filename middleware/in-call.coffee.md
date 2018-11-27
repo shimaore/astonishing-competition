@@ -1,6 +1,6 @@
     @name = "astonishing-competition:middleware:in-call"
     {debug,foot,heal} = (require 'tangible') @name
-    PouchDB = require 'ccnq4-pouchdb'
+    CouchDB = require 'most-couchdb'
     moment = require 'moment'
 
     {Executor} = require '../runner'
@@ -12,6 +12,8 @@
       now = moment.utc()
       if time.isAfter now
         sleep time.diff now
+
+    {rated_sub_account,period_for} = require '../tools'
 
     seconds = 1000
 
@@ -31,23 +33,29 @@ These are all preconditions. None of them should fail unless the proper modules 
 
       unless @session?
         debug.dev 'No session'
-        fail()
+        await fail()
         return
 
-      unless @cfg.aggregation?.PlansDB
-        unless @cfg.route_non_billable_calls
-          debug.dev 'No PlansDB'
-          fail()
+      unless @cfg.rating_plans?
+        debug.dev 'No cfg.rating_plans'
+        await fail()
         return
+
+      PlansDB = new CouchDB @cfg.rating_plans
 
       unless @session.rated?
         debug.dev 'No session.rated'
-        fail()
+        await fail()
         return
 
       unless @session.rated.params?
         debug.dev 'No session.rated.params'
-        fail()
+        await fail()
+        return
+
+      unless @cfg.br?
+        debug.dev 'No cfg.br'
+        await fail()
         return
 
 Remember, we expect to have:
@@ -70,7 +78,7 @@ Rating script
 
       debug 'Preprocessing client', client_cdr
 
-      plan_script = await get_ornaments @cfg.aggregation.PlansDB, client_cdr
+      plan_script = await get_ornaments PlansDB, client_cdr
 
 Ornaments might be set on the endpoint (client-side) to add decisions as to whether the call should proceed or not, or be interrupted at some point.
 
@@ -105,8 +113,8 @@ This allows customer code to maintain their own counters, without interfering wi
 
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
-      sub_account = @cfg.rated_sub_account @session.rated
-      client_period = @cfg.period_for_client @session.rated
+      sub_account = rated_sub_account @session.rated
+      client_period = period_for @session.rated.client
       counters_prefix = ['α',sub_account,client_period].join ' '
       executor = new Executor counters_prefix, private_commands, @cfg.br
 

@@ -10,8 +10,8 @@
           ctx =
             cfg:
               sip_profiles:{}
-              prefix_admin: ''
-              aggregation:
+              prefix_admin: 'http://admin:password@couchdb:5984'
+              rating:
                 plans: 'h'
             session:{}
             once: -> Promise.resolve null

@@ -1,16 +1,7 @@
     @name = "astonishing-competition:middleware:client:log-rated"
     {debug,heal} = (require 'tangible') @name
-    PouchDB = require 'ccnq4-pouchdb'
-      .plugin require 'pouchdb-adapter-leveldb'
-      .defaults adapter: 'leveldb'
+    CouchDB = require 'most-couchdb'
     moment = require 'moment'
-
-    LRU = require 'lru-cache'
-    cache = LRU
-      max: 12
-      dispose: (key,value) ->
-        debug 'Dispose of', key
-        value?.close?()
 
     {Executor} = require '../../runner'
     build_commands = require '../commands'
@@ -21,57 +12,27 @@
       now = moment.utc()
       if time.isAfter now
         sleep time.diff now
+    ec = encodeURIComponent
+    {rated_sub_account,period_for,cdr_period_for,rated_carrier} = require '../../tools'
 
     seconds = 1000
-
-Compute period
-
-    @server_pre = ->
-
-      unless @cfg.aggregation?
-        unless @cfg.route_non_billable_calls
-          throw new Error 'Missing cfg.aggregation'
-
-      {local,remote} = @cfg.aggregation
-      remote ?= @cfg.prefix_source # defined by nimble-direction
-
-Configure `LocalDB`
-
-* cfg.aggregation.remote (string,URI) base URI for remote invoicing databases. Defaults to cfg.prefix_source (which itself defaults to the value of the `NIMBLE_PREFIX_SOURCE` environemnt variable).
-* cfg.aggregation.local (string,path) directory where local CDRs are stored if cfg.aggregation.remote fails. The directory must be present if the name is used (it is not created).
-
-      @cfg.aggregation.LocalDB ?= (name) =>
-        db = cache.get name
-        return db if db?
-
-        switch
-
-          when local?
-            db = new PouchDB name, prefix: local
-            if remote?
-              target = new PouchDB name, prefix: remote
-              db.replicate.to target, live: true, retry: true
-
-          when remote?
-            db = new PouchDB name, prefix: remote
-
-          else
-            debug.dev "Neither aggregation.local not aggregation.remote, saving CDRs wherever!"
-            db = new PouchDB name
-
-        cache.set name, db
-        db
-
-* cfg.CDR_DB_PREFIX (string) database-name prefix for CDRs. Default: `cdr`
-
-      @cfg.CDR_DB_PREFIX ?= 'cdr'
 
 Call handler
 ============
 
     @include = ->
 
+      unless @cfg.prefix_admin?
+        debug.dev 'Missing cfg.prefix_admin, Skipping'
+        return
+
       debug 'Start'
+
+      LocalDB = (name) =>
+        uri = "#{@cfg.prefix_admin}/#{ec name}"
+        db = new CouchDB uri, true
+        await db.info().catch -> db.create()
+        db
 
 These are all preconditions. None of them should fail unless the proper modules are not loaded.
 (In other words these all indicate developer errrors.)
@@ -82,23 +43,24 @@ These are all preconditions. None of them should fail unless the proper modules 
 
       unless @session?
         debug.dev 'No session'
-        fail()
+        await fail()
         return
 
-      unless @cfg.aggregation?.PlansDB and @cfg.aggregation?.LocalDB
-        unless @cfg.route_non_billable_calls
-          debug 'No PlansDB nor LocalDB'
-          fail()
+      unless @cfg.rating_plans?
+        debug.dev 'No cfg.rating_plans'
+        await fail()
         return
+
+      PlansDB = new CouchDB @cfg.rating_plans
 
       unless @session.rated?
         debug.dev 'No session.rated'
-        fail()
+        await fail()
         return
 
       unless @session.rated.params?
         debug.dev 'No session.rated.params'
-        fail()
+        await fail()
         return
 
 Remember, we expect to have:
@@ -113,6 +75,11 @@ End-of-call handler
 ===================
 
       debug 'Setting handle_final'
+
+* cfg.CDR_DB_PREFIX (string) database-name prefix for CDRs. Default: `cdr`
+
+      {CDR_DB_PREFIX} = @cfg
+      CDR_DB_PREFIX ?= 'cdr'
 
 This is executed only once, at the end of the call, to generate the CDR used for billing.
 This CDR is saved in a database.
@@ -154,14 +121,14 @@ For the client
 
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
-          sub_account = @cfg.rated_sub_account @session.rated
-          client_period = @cfg.period_for_client @session.rated
+          sub_account = rated_sub_account @session.rated
+          client_period = period_for @session.rated.client
           counters_prefix = ['ω',sub_account,client_period].join ' '
 
           private_commands = build_commands.call this
           executor = new Executor counters_prefix, private_commands, @cfg.br
 
-          plan_script = await get_ornaments @cfg.aggregation.PlansDB, client_cdr
+          plan_script = await get_ornaments PlansDB, client_cdr
 
           if plan_script?
             plan_fun = try compile plan_script, private_commands catch error
@@ -180,14 +147,15 @@ Counters are handled at the `sub_account` level (although we could also have `ac
 
 Period-database: (monthly) database used to globally generate invoices. Contains data for all accounts.
 
-            client_database = [@cfg.CDR_DB_PREFIX,client_period].join '-'
+            client_cdr_period = cdr_period_for @session.rated.client
+            client_database = [CDR_DB_PREFIX,client_cdr_period].join '-'
 
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
             unless cdr.hide_call
 
               debug "LocalDB(#{client_database}).put", cdr
-              await @cfg.aggregation.LocalDB(client_database).put cdr
+              await (await LocalDB client_database).put cdr
 
           catch error
             debug.dev "safely_write client: #{error.stack ? JSON.stringify error}", client_database
@@ -205,12 +173,12 @@ A rated `carrier` object, saved into the rated-database for the carrier.
             carrier_cdr.compute duration
             cdr = carrier_cdr.toJS()
 
-            carrier = @cfg.rated_carrier @session.rated
-            carrier_period = @cfg.period_for_carrier @session.rated
-            carrier_database = [@cfg.CDR_DB_PREFIX,carrier,carrier_period].join '-'
+            carrier = rated_carrier @session.rated
+            carrier_cdr_period = cdr_period_for @session.rated.carrier
+            carrier_database = [CDR_DB_PREFIX,carrier,carrier_cdr_period].join '-'
 
             debug "LocalDB(#{carrier_database}).put", cdr
-            await @cfg.aggregation.LocalDB(carrier_database).put cdr
+            await (await LocalDB carrier_database).put cdr
 
           catch error
             debug.dev "safely_write carrier: #{error.stack ? JSON.stringify error}", carrier_database

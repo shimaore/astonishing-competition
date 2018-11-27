@@ -1,19 +1,31 @@
     ({expect} = require 'chai').should()
-    debug = (require 'tangible') "#{(require '../package').name}:middleware:rating"
-    PouchDB = require 'shimaore-pouchdb-core'
-      .plugin require 'pouchdb-adapter-memory'
-      .plugin require 'pouchdb-replication'
-      .defaults adapter:'memory'
+    debug = (require 'tangible') "#{(require '../package').name}:test:rating"
+    CouchDB = require 'most-couchdb'
     BlueRing = require 'blue-rings'
     moment = require 'moment-timezone'
+    ec = encodeURIComponent
+
+    prefix = 'http://admin:password@couchdb:5984'
 
     sleep = (timeout) -> new Promise (resolve) -> setTimeout resolve, timeout
     describe 'rating', ->
       s1 = require '../middleware/setup'
-      s2 = require '../middleware/tools'
       m1 = require '../middleware/client/rating'
       m2 = require '../middleware/in-call'
       m3 = require '../middleware/client/log-rated'
+
+      plans_db = new CouchDB prefix+'/'+'plans'
+      db1 = new CouchDB prefix+'/'+ec 'rates-client+current'
+      db2 = new CouchDB prefix+'/'+ec 'rates-carrier+current'
+      before ->
+        try await plans_db.create()
+        try await db1.create()
+        try await db2.create()
+      after ->
+        try await plans_db.destroy()
+        try await db1.destroy()
+        try await db2.destroy()
+
       it 'should set `rated`', ->
         @timeout 7*1000
 
@@ -23,20 +35,11 @@
         seen = 0
 
         trigger = null
-        plans_db = new PouchDB 'plans'
         ctx =
           cfg:
-            period_of: (stamp,timezone) -> # default from huge-play/middleware/setup
-                moment
-                .tz stamp, timezone
-                .format 'YYYY-MM'
             rating:
               source: 'local'
-              tables: PouchDB
-            aggregation:
-              PlansDB: plans_db
-              LocalDB: (name) -> new PouchDB name
-            prefix_admin: ''
+            prefix_admin: prefix
 
           ornaments_commands:
             display: (args...) ->
@@ -62,9 +65,10 @@ Client-side data
               incall_script:
                 language: 'v2'
                 script: '''
-                  increment('bear',2,'day'),
-                  increment_duration('cat','day'),
+                  increment('bear',2,'day')
+                  increment_duration('cat','day')
                   display()
+
                 '''
 
           debug: ->
@@ -95,35 +99,39 @@ Client-side data
         s1.server_pre?.call ctx, ctx
         ctx.cfg.br = BlueRing.run host: 'A'
         after -> ctx.cfg.br.end()
-        s2.server_pre?.call ctx, ctx
         m1.server_pre?.call ctx, ctx
         m2.server_pre?.call ctx, ctx
         m3.server_pre?.call ctx, ctx
         ctx.should.have.property 'cfg'
         ctx.cfg.should.have.property 'rating'
+        ctx.cfg.should.have.property 'rating_plans'
 
         await plans_db.put
           _id: 'plan:youpi'
           script:
             language: 'v2'
             script: '''
-              lun_ven = weekdays(1,2,3,4,5),
-              samedi = weekdays(6),
-              dimanche = weekdays(0),
+              lun_ven = weekdays(1,2,3,4,5)
+              samedi = weekdays(6)
+              dimanche = weekdays(0)
 
-              if lun_ven then tag('everyone'),
-              if samedi then tag('dedicated'),
-              if dimanche then ( tag('closed'), display("Are you really testing on a Sunday??") )
+              if lun_ven
+                tag('everyone')
+              if samedi
+                tag('dedicated')
+              if dimanche
+                tag('closed')
+                display("Are you really testing on a Sunday??")
+
             '''
 
-        db = new PouchDB 'rates-client+current'
-        await db.put
+        await db1.put
           _id:'configuration'
           currency: 'EUR'
           divider: 1
           per: 60
           ready: true
-        await db.put
+        await db1.put
           _id:'prefix:1800'
           initial:
             cost: 4
@@ -131,15 +139,14 @@ Client-side data
           subsequent:
             cost: 3
             duration: 60
-        db.close()
-        db = new PouchDB 'rates-carrier+current'
-        await db.put
+
+        await db2.put
           _id:'configuration'
           currency: 'EUR'
           divider: 1
           per: 60
           ready: true
-        await db.put
+        await db2.put
           _id:'prefix:1800'
           initial:
             cost: 0
@@ -147,9 +154,7 @@ Client-side data
           subsequent:
             cost: 1
             duration: 1
-        db.close()
 
-        debug 'include'
         await m1.include.call ctx, ctx
         ctx.should.have.property 'session'
         ctx.session.should.have.property 'rated'
@@ -158,14 +163,13 @@ Client-side data
 
         await m2.include.call ctx, ctx
         await m3.include.call ctx, ctx
-        debug 'include returned', ctx
 
 Carrier-side data
 
         await sleep 5000
         ctx.session.gateway =
-          _id: 'carrier:bob the carrier'
-          carrier: 'bob the carrier'
+          _id: 'carrier:bob-the-carrier'
+          carrier: 'bob-the-carrier'
           rating:
             '2016-01-01':
               table: 'carrier+current'
