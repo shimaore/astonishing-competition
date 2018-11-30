@@ -13,7 +13,7 @@
       if time.isAfter now
         sleep time.diff now
 
-    {rated_sub_account,period_for} = require '../tools'
+    {period_for} = require '../tools'
 
     seconds = 1000
 
@@ -113,7 +113,7 @@ This allows customer code to maintain their own counters, without interfering wi
 
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
-      sub_account = rated_sub_account @session.rated
+      sub_account = @cfg.rated_sub_account @session.rated
       client_period = period_for @session.rated.client
       counters_prefix = ['α',sub_account,client_period].join ' '
       executor = new Executor counters_prefix, private_commands, @cfg.br

@@ -155,6 +155,7 @@ Client-side data
             cost: 1
             duration: 1
 
+        await s1.include.call ctx, ctx
         await m1.include.call ctx, ctx
         ctx.should.have.property 'session'
         ctx.session.should.have.property 'rated'

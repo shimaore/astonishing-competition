@@ -124,7 +124,12 @@ Prepare rating databases access (use local replica)
 
       debug 'server_pre: Ready'
 
+    {rated_account,rated_sub_account} = require '../tools'
+
     @include = ->
+
+      @cfg.rated_account ?= rated_account
+      @cfg.rated_sub_account ?= rated_sub_account
 
     @end = ->
       clearInterval timer if timer?

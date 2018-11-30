@@ -13,11 +13,11 @@
       if time.isAfter now
         sleep time.diff now
     ec = encodeURIComponent
-    {rated_sub_account,period_for,cdr_period_for,rated_carrier} = require '../../tools'
+    {period_for,cdr_period_for,rated_carrier} = require '../../tools'
 
     seconds = 1000
 
-    prepare_client_cdr = (cdr) ->
+    prepare_client_cdr = (cdr,account,sub_account) ->
       {
         _id: cdr._id
 
@@ -30,8 +30,8 @@ Parts of the `_id` (see `entertaining-crib/rated`: the fields are base-62 encode
 
 Account
 
-        A: cdr.client.account
-        S: cdr.client.sub_account
+        A: account
+        S: sub_account
 
 Outcome of the computation
 
@@ -164,10 +164,11 @@ For the client
         if client_cdr?
 
           debug 'Preprocessing client', client_cdr
+          account = @cfg.rated_account @session.rated
 
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
-          sub_account = rated_sub_account @session.rated
+          sub_account = @cfg.rated_sub_account @session.rated
           client_period = period_for @session.rated.client
           counters_prefix = ['ω',sub_account,client_period].join ' '
 
@@ -200,7 +201,7 @@ Do not store CDRs for calls that must be hidden (e.g. emergency calls in most ju
 
             unless cdr.hide_call
 
-              cdr = prepare_client_cdr client_cdr
+              cdr = prepare_client_cdr client_cdr, account, sub_account
               debug "LocalDB(#{client_database}).put", cdr
               await (await LocalDB client_database).put cdr
 
