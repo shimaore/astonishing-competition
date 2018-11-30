@@ -28,6 +28,11 @@ Parts of the `_id` (see `entertaining-crib/rated`: the fields are base-62 encode
         R: cdr.remote_number
         D: cdr.duration
 
+Account
+
+        A: cdr.client.account
+        S: cdr.client.sub_account
+
 Outcome of the computation
 
         c: cdr.currency
@@ -37,6 +42,8 @@ Extra data.
 
         d: cdr.direction
         e: cdr.rating.destination
+        m: cdr.rating_info?.mobile
+        n: cdr.rating_info?.full_name
       }
 
     prepare_carrier_cdr = (cdr) ->
