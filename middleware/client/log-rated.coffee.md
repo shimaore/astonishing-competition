@@ -17,6 +17,45 @@
 
     seconds = 1000
 
+    prepare_client_cdr = (cdr) ->
+      {
+        _id: cdr._id
+
+Parts of the `_id` (see `entertaining-crib/rated`: the fields are base-62 encoded to build the `_id`).
+
+        B: cdr.billable_number
+        C: cdr.connect_stamp
+        R: cdr.remote_number
+        D: cdr.duration
+
+Outcome of the computation
+
+        c: cdr.currency
+        a: cdr.actual_amount
+
+Extra data.
+
+        d: cdr.direction
+        e: cdr.rating.destination
+      }
+
+    prepare_carrier_cdr = (cdr) ->
+      {
+        _id: cdr._id
+
+Parts of the `_id` (see `entertaining-crib/rated`: the fields are base-62 encoded to build the `_id`).
+
+        B: cdr.billable_number
+        C: cdr.connect_stamp
+        R: cdr.remote_number
+        D: cdr.duration
+
+Outcome of the computation
+
+        c: cdr.currency
+        a: cdr.actual_amount
+      }
+
 Call handler
 ============
 
@@ -154,6 +193,7 @@ Do not store CDRs for calls that must be hidden (e.g. emergency calls in most ju
 
             unless cdr.hide_call
 
+              cdr = prepare_client_cdr client_cdr
               debug "LocalDB(#{client_database}).put", cdr
               await (await LocalDB client_database).put cdr
 
@@ -177,6 +217,7 @@ A rated `carrier` object, saved into the rated-database for the carrier.
             carrier_cdr_period = cdr_period_for @session.rated.carrier
             carrier_database = [CDR_DB_PREFIX,carrier,carrier_cdr_period].join '-'
 
+            cdr = prepare_carrier_cdr cdr
             debug "LocalDB(#{carrier_database}).put", cdr
             await (await LocalDB carrier_database).put cdr
 
