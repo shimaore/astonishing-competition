@@ -42,6 +42,8 @@ Extra data.
 
         d: cdr.direction
         e: cdr.rating.destination
+        p: cdr.rating.plan
+        t: cdr.rating.table
         m: cdr.rating_info?.mobile
         n: cdr.rating_info?.full_name
       }
