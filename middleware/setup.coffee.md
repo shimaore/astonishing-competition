@@ -57,7 +57,7 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
 
       await rows.forEach ({key}) ->
         try
-          debug 'Requesting replication for', key
+          debug.dev 'Requesting replication for', key
           name = "#{prefix}#{key}"
           uri = "#{cfg.prefix_admin}/#{ec name}"
           target = new CouchDB uri
@@ -72,7 +72,8 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
 At config time (i.e. before starting FreeSwitch)
 -------
 
-    timer = null
+    timer1 = null
+    timer2 = null
 
     @config = ->
 
@@ -91,9 +92,13 @@ The list is updated at startup,
 
       await replicate_rating_tables @cfg
 
-and every 24h thereafter.
+ten minutes after startup (so that the view is ready),
 
-      timer = setInterval ( => await replicate_rating_tables @cfg ), 24*60*60*1000
+      timer1 = setTimeout ( => await replicate_rating_tables @cfg ), 10*60*1000
+
+and every 6h thereafter.
+
+      timer2 = setInterval ( => await replicate_rating_tables @cfg ), 6*60*60*1000
 
       debug 'config: Ready'
 
@@ -132,5 +137,6 @@ Prepare rating databases access (use local replica)
       @cfg.rated_sub_account ?= rated_sub_account
 
     @end = ->
-      clearInterval timer if timer?
+      clearTimeout  timer1 if timer1?
+      clearInterval timer2 if timer2?
       return
