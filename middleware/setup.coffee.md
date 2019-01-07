@@ -61,6 +61,7 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
           name = "#{prefix}#{key}"
           uri = "#{cfg.prefix_admin}/#{ec name}"
           target = new CouchDB uri
+          await target.create().catch -> yes
           await cfg.reject_tombstones target
           target = null
           await cfg.replicate name
