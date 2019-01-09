@@ -12,7 +12,7 @@ Execute the ornaments
       constructor: (@prefix,@commands,@br) ->
 
       run: (fun,cdr) ->
-        debug 'Executor::execute', {cdr}
+        debug 'Executor::run (before)', cdr
 
         pr = (name) => "#{@prefix} #{name}"
 
@@ -25,6 +25,7 @@ Execute the ornaments
           get_counter: (name) => @br.get_counter (pr name)
         }
         await fun.call ctx
+        debug 'Executor::run (after)', cdr
         return
 
 Generate and evaluate a new CDR
@@ -32,7 +33,7 @@ Generate and evaluate a new CDR
 
       evaluate: (fun,cdr,duration) ->
 
-        debug 'evaluate', cdr, duration
+        debug 'Executor::evaluate (before)', duration, cdr
 
 For each step we compute the new values at the specified point-in-time.
 Note: we must build a new `Rated` object since its duration can only be set once.
@@ -57,8 +58,7 @@ nor the copy we send back.
         for own k,v of working_cdr when k[0] isnt '_'
           cdr[k] = v
 
-        debug 'evaluate completed', cdr
-
+        debug 'Executor::evaluate (after)', duration, cdr
         cdr
 
     module.exports = {Executor}

@@ -171,7 +171,7 @@ For the client
 Counters are handled at the `sub_account` level (although we could also have `account`-level counters, I guess).
 
           sub_account = @cfg.rated_sub_account @session.rated
-          client_period = period_for @session.rated.client
+          client_period = period_for client_cdr
           counters_prefix = ['ω',sub_account,client_period].join ' '
 
           private_commands = build_commands.call this
@@ -196,14 +196,14 @@ Counters are handled at the `sub_account` level (although we could also have `ac
 
 Period-database: (monthly) database used to globally generate invoices. Contains data for all accounts.
 
-            client_cdr_period = cdr_period_for @session.rated.client
+            client_cdr_period = cdr_period_for cdr
             client_database = [CDR_DB_PREFIX,client_cdr_period].join '-'
 
 Do not store CDRs for calls that must be hidden (e.g. emergency calls in most jurisdictions).
 
             unless cdr.hide_call
 
-              cdr = prepare_client_cdr client_cdr, account, sub_account
+              cdr = prepare_client_cdr cdr, account, sub_account
               debug "LocalDB(#{client_database}).put", cdr
               await (await LocalDB client_database).put cdr
 
@@ -224,7 +224,7 @@ A rated `carrier` object, saved into the rated-database for the carrier.
             cdr = carrier_cdr.toJS()
 
             carrier = rated_carrier @session.rated
-            carrier_cdr_period = cdr_period_for @session.rated.carrier
+            carrier_cdr_period = cdr_period_for cdr
             carrier_database = [CDR_DB_PREFIX,carrier,carrier_cdr_period].join '-'
 
             cdr = prepare_carrier_cdr cdr
