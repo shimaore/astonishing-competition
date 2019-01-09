@@ -57,6 +57,9 @@ This is the case e.g. for centrex-to-centrex (internal) calls.
         when params.direction is 'centrex-internal'
           debug 'Routing internal Centrex call'
 
+        when params.direction is 'internal'
+          debug 'Routing internal call'
+
 System-wide configuration accepting non-billable calls.
 
         when not @session.rated?.client?
