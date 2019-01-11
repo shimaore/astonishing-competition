@@ -1,5 +1,6 @@
     @name = "astonishing-competition:middleware:setup"
     {debug,foot} = (require 'tangible') @name
+    Nimble = require 'nimble-direction'
     ec = encodeURIComponent
 
     Rating = require 'entertaining-crib'
@@ -40,14 +41,16 @@
 
     replicate_rating_tables = foot (cfg) ->
 
+      N = Nimble cfg
+
 Get the list of tables used in provisioning.
 
-      await cfg
+      await N
         .push rating_tables()
         .catch (error) ->
           debug.dev 'Inserting rating-tables couchapp failed (ignored).', error.stack ? JSON.stringify error
 
-      rows = (new CouchDB cfg.provisioning).query 'rating', 'tables',
+      rows = (new CouchDB N.provisioning).query 'rating', 'tables',
         reduce: true
         group: true
 
@@ -59,12 +62,12 @@ We map the table name to a database name by applying a prefix, cfg.rating.prefix
         try
           debug.dev 'Requesting replication for', key
           name = "#{prefix}#{key}"
-          uri = "#{cfg.prefix_admin}/#{ec name}"
+          uri = "#{N.prefix_admin}/#{ec name}"
           target = new CouchDB uri
           await target.create().catch -> yes
-          await cfg.reject_tombstones target
+          await N.reject_tombstones target
           target = null
-          await cfg.replicate name
+          await N.replicate name
         catch error
           debug.dev "Unable to replicate #{name} database.", error.stack ? JSON.stringify error
 
@@ -78,14 +81,12 @@ At config time (i.e. before starting FreeSwitch)
 
     @config = ->
 
-      unless @cfg.prefix_admin?
-        debug.dev 'config: Missing cfg.prefix_admin, Skipping'
-        return
+      N = Nimble @cfg
 
 Replicate the `plans` database (or whatever it's called in cfg.rating.plans).
 
       rating_plans = @cfg.rating?.plans ? DEFAULT_RATING_PLANS
-      await @cfg.replicate rating_plans
+      await N.replicate rating_plans
 
 Replicate the `rates` databases.
 
@@ -108,12 +109,10 @@ At server startup time
 
     @server_pre = ->
 
-      unless @cfg.prefix_admin?
-        debug.dev 'server_pre: Missing cfg.prefix_admin. Skipping'
-        return
+      N = Nimble @cfg
 
       rating_plans = @cfg.rating?.plans ? DEFAULT_RATING_PLANS
-      @cfg.rating_plans = "#{@cfg.prefix_admin}/#{rating_plans}"
+      @cfg.rating_plans = "#{N.prefix_admin}/#{rating_plans}"
 
 Prepare rating databases access (use local replica)
 
@@ -121,7 +120,7 @@ Prepare rating databases access (use local replica)
 
       Tables = (key) =>
         name = "#{prefix}#{key}"
-        uri = "#{@cfg.prefix_admin}/#{ec name}"
+        uri = "#{N.prefix_admin}/#{ec name}"
         new CouchDB uri, true
 
       @cfg.rating = new Rating

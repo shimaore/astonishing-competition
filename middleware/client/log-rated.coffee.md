@@ -1,6 +1,7 @@
     @name = "astonishing-competition:middleware:client:log-rated"
     {debug,heal} = (require 'tangible') @name
     CouchDB = require 'most-couchdb'
+    Nimble = require 'nimble-direction'
     moment = require 'moment'
 
     {Executor} = require '../../runner'
@@ -70,14 +71,12 @@ Call handler
 
     @include = ->
 
-      unless @cfg.prefix_admin?
-        debug.dev 'Missing cfg.prefix_admin, Skipping'
-        return
+      N = Nimble @cfg
 
       debug 'Start'
 
       LocalDB = (name) =>
-        uri = "#{@cfg.prefix_admin}/#{ec name}"
+        uri = "#{N.prefix_admin}/#{ec name}"
         db = new CouchDB uri, true
         await db.info().catch -> db.create()
         db
