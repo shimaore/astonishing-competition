@@ -19,7 +19,7 @@
       today = new Date(yesterday).toJSON()[0...10]
       debug "Replication will consider the last table before #{today} and any after that."
 
-      _id: '_design/rating'
+      _id: '_design/local-rating'
       language: 'coffeescript'
       views:
         tables:
@@ -50,7 +50,7 @@ Get the list of tables used in provisioning.
         .catch (error) ->
           debug.dev 'Inserting rating-tables couchapp failed (ignored).', error.stack ? JSON.stringify error
 
-      rows = (new CouchDB N.provisioning).query 'rating', 'tables',
+      rows = (new CouchDB N.provisioning).query 'local-rating', 'tables',
         reduce: true
         group: true
 
