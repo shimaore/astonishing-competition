@@ -7,7 +7,7 @@
     "prepublishOnly": "npm run build",
     "build": "npm install --only=dev && rm package-lock.json && coffee -c *.coffee.md middleware/*.coffee.md middleware/*/*.coffee.md && jison -m commonjs grammar/cgu-fr.jison",
     "pretest": "npm run build && coffee -c test/*.coffee.md",
-    "test": "mocha"
+    "test": "nyc mocha"
   },
   "author": "Stéphane Alnet <stephane@shimaore.net> (http://stephane.shimaore.net/)",
   "license": "Unlicense",
@@ -28,10 +28,10 @@
   },
   "devDependencies": {
     "blue-rings": "^3.0.0",
-    "chai": "^4.1.2",
+    "chai": "^4.2.0",
     "coffeescript": "^2.3.2",
     "jison": "^0.4.18",
-    "memdown": "^3.0.0",
-    "mocha": "^5.2.0"
+    "mocha": "^6.0.2",
+    "nyc": "^13.3.0"
   }
 }

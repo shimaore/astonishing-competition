@@ -2,3 +2,4 @@ node_modules/
 coverage/
 plans/
 remote-cdr-*
+.nyc_output/
