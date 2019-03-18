@@ -159,7 +159,8 @@ Client-side data
         await m1.include.call ctx, ctx
         ctx.should.have.property 'session'
         ctx.session.should.have.property 'rated'
-        ctx.session.rated.should.have.property 'client'
+        ctx.session.rated.should.have.property 'params'
+        ctx.session.rated.params.should.have.property 'client'
         ctx.session.rated.params.client.should.equal ctx.session.endpoint
 
         await m2.include.call ctx, ctx
@@ -181,15 +182,19 @@ Wait for cdr-report to be sent
         await sleep 1000
 
         debug 'ctx.session.rated', ctx.session.rated
-        ctx.session.rated.should.have.property 'carrier'
+        ctx.session.rated.should.have.property 'params'
+        ctx.session.rated.params.should.have.property 'carrier'
         ctx.session.rated.params.carrier.should.equal ctx.session.gateway
+
+        ctx.session.rated.should.have.property 'carrier'
         ctx.session.rated.carrier.should.have.property 'currency', 'EUR'
-
-        ctx.session.rated.client.should.have.property 'duration', 33
-        ctx.session.rated.client.should.have.property 'amount', 7
-
         ctx.session.rated.carrier.should.have.property 'duration', 33
         ctx.session.rated.carrier.should.have.property 'amount', 0.55
+
+        ctx.session.rated.should.have.property 'client'
+        ctx.session.rated.client.should.have.property 'currency', 'EUR'
+        ctx.session.rated.client.should.have.property 'duration', 33
+        ctx.session.rated.client.should.have.property 'amount', 7
 
         ctx.should.have.property('tag').that.is.a.string
 

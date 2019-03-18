@@ -120,8 +120,7 @@ Prepare rating databases access (use local replica)
 
       Tables = (key) =>
         name = "#{prefix}#{key}"
-        uri = "#{N.prefix_admin}/#{ec name}"
-        new CouchDB uri, true
+        "#{N.prefix_admin}/#{ec name}"
 
       @cfg.rating = new Rating
         source: @cfg.rating?.source ? DEFAULT_RATING_SOURCE
