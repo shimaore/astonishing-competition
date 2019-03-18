@@ -14,7 +14,9 @@
       it 'should compile through flat-ornament', ->
         compile = require '../compile'
         text = fs.readFileSync './test/new-cgu-knet.txt', encoding:'utf8'
-        {commands} = (require '../commands')
+        build_commands = require '../middleware/commands'
+        commands = build_commands.call session: rated: params: {}
+
         expect fun = compile {language:'cgu-fr',script:text}, commands
         cdr = new Rated
             billable_number: '42'

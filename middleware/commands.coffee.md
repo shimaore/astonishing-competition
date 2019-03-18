@@ -23,6 +23,16 @@ Hangs the call up.
           @direction 'rejected'
           'over'
 
+Other call-based conditions.
+
+Notice that these are not fulfilled during the very first test, only after LCR code has been evaluated.
+
+        called_emergency: =>
+          @session.destination_emergency ? null
+
+        called_onnet: =>
+          @session.destination_onnet ? null
+
 Counter condition based on `incall_values`
 
         incall_atmost: (maximum_name,value) ->

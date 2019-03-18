@@ -160,7 +160,12 @@ Execute the script a first time when the call is routing / in-progress.
         @direction 'failed'
         return
 
-      await incall_execute initial_duration
+`tough-rate` might calls us once the call is going to route
+
+      @__incall_script = =>
+        await incall_execute initial_duration
+
+      await @__incall_script()
 
 Aterwards, we wait for the call to be answered.
 

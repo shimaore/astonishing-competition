@@ -193,14 +193,6 @@ Destination conditions
           data = @cdr.rating_info ?= validate @cdr.remote_number
           return data?.country in countries
 
-      # 'fr-FR': 'urgences'
-      called_emergency: ->
-          if @cdr.emergency then true else false
-
-      # 'fr-FR': 'sur le réseau'
-      called_onnet: ->
-          if @cdr.onnet then true else false
-
 Per-call conditions
 
       # per_call_at_most_duration

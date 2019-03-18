@@ -35,3 +35,8 @@
         cfg = rating: {plans: 'h'}, prefix_admin: ''
         await m.server_pre?.call cfg:cfg, debug: debug
         await m.include.call cfg:cfg, respond: (->), debug: debug, direction: (->), action: (-> await return)
+      it 'should load lcr', ->
+        m = require '../middleware/lcr'
+        cfg = {}
+        await m.server_pre?.call cfg:cfg, debug: debug
+        await m.include.call cfg:cfg
