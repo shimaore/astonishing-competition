@@ -132,6 +132,8 @@ Compute the CDR at that point in time.
 
 Then execute the decision code on the updated CDR.
 
+Notice that in most cases, the `plan` should hide emergency calls, meaning that the in-call scripts will not be executed for emergency calls.
+
         unless incall_cdr.hide_call
           Object.assign private_cdr, incall_cdr
           await executor.run private_fun, private_cdr

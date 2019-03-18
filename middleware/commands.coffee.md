@@ -1,4 +1,5 @@
     {commands} = require '../commands'
+    {validate} = require 'numbering-plans'
 
     module.exports = ->
 
@@ -13,6 +14,8 @@ We need to map the functions because they are not bound to the call by `huge-pla
       for own k,v of @ornaments_commands
         ornaments_commands[k] = v.bind this
 
+      {session} = this
+
       Object.assign {}, ornaments_commands, commands,
 
 Hangs the call up.
@@ -25,13 +28,15 @@ Hangs the call up.
 
 Other call-based conditions.
 
-Notice that these are not fulfilled during the very first test, only after LCR code has been evaluated.
+Notice that these (especially `onnet`) are not fulfilled during the very first test, only after LCR code has been evaluated.
 
-        called_emergency: =>
-          @session.destination_emergency ? null
+        called_emergency: ->
+          return true if session.destination_emergency
+          data = @cdr.rating_info ?= validate @cdr.remote_number
+          return data?.emergency
 
-        called_onnet: =>
-          @session.destination_onnet ? null
+        called_onnet: ->
+          session.destination_onnet ? null
 
 Counter condition based on `incall_values`
 
