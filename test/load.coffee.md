@@ -40,3 +40,5 @@
         cfg = {}
         await m.server_pre?.call cfg:cfg, debug: debug
         await m.include.call cfg:cfg
+      it 'should load prepare', ->
+        m = require '../prepare'
