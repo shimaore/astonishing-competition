@@ -20,7 +20,7 @@
     "marked-summer": "^1.1.3",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.23",
-    "most-couchdb": "^2.0.0",
+    "most-couchdb": "^3.2.0",
     "nimble-direction": "^9.0.1",
     "numbering-plans": "^2.7.0",
     "tangible": "^3.0.0",
@@ -32,6 +32,6 @@
     "coffeescript": "^2.3.2",
     "jison": "^0.4.18",
     "mocha": "^6.0.2",
-    "nyc": "^13.3.0"
+    "nyc": "^14.1.1"
   }
 }
