@@ -22,7 +22,7 @@ Outcome of the computation
 Extra data.
 
         d: cdr.direction
-        e: cdr.rating.destination
+        e: cdr.rating_data?.destination
         p: cdr.rating.plan
         t: cdr.rating.table
         m: cdr.rating_info?.mobile
