@@ -32,7 +32,7 @@ Otherwise, get the script from the billing plan.
         {script,ornaments} = doc
         compile (script ? ornaments), private_commands
       catch error
-        debug.dev 'Invalid script', doc
+        debug.dev 'Invalid script', doc, error
         null
 
 The Aggregator is used to run the plan's actual billing code.
