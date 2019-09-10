@@ -13,6 +13,7 @@ The code should also include tools to:
     {validate} = require 'numbering-plans'
     Rated = require 'entertaining-crib/rated'
     Moment = require 'moment-timezone'
+    debug = (require 'tangible') 'astonishing-competition:commands'
 
 Period
 ------
@@ -22,7 +23,9 @@ This allows e.g. to have daily counters (the default) on top of "billing-period"
 
 `period_name` will translate a generic name (`day`) into an actual period string (as understood by moment.js).
 
-    period_name = ( period = 'YYYY-MM-DD' ) ->
+    period_name = ( period ) ->
+
+      period ?= 'YYYY-MM-DD'
 
 Shortcuts
 
@@ -160,6 +163,7 @@ Counters conditions
       at_most: (maximum,counter,period) ->
           counter = counter_period counter, @cdr, period
           [coherent,value] = await @get_counter counter
+          debug 'at_most', maximum, counter, period, value
           value <= maximum
 
 Counter value
@@ -235,7 +239,7 @@ The typical setup is:
 
 Restrict the free part of the call to the first `up_to` seconds of the call.
 
-      # atmost_up_to
+      # per_call_up_to
       # 'fr-FR': "jusqu'à {0} secondes par appel"
       per_call_up_to: (up_to) ->
           @cdr.up_to ?= up_to

@@ -1,5 +1,6 @@
     {commands} = require '../commands'
     {validate} = require 'numbering-plans'
+    debug = (require 'tangible') 'astonishing-competition:middleware:commands'
 
     module.exports = ->
 
@@ -31,17 +32,21 @@ Other call-based conditions.
 Notice that these (especially `onnet`) are not fulfilled during the very first test, only after LCR code has been evaluated.
 
         called_emergency: ->
+          debug 'called_emergency (1)', session.destination_emergency
           return true if session.destination_emergency
           data = @cdr.rating_info ?= validate @cdr.remote_number
+          debug 'called_emergency (2)', data?.emergency
           return data?.emergency
 
         called_onnet: ->
+          debug 'called_onnet', session.destination_onnet
           session.destination_onnet ? null
 
 Counter condition based on `incall_values`
 
         incall_atmost: (maximum_name,value) ->
           maximum = incall_values[maximum_name]
+          debug 'incall_atmost', maximum_name, value, maximum
           return false unless maximum?
           return false unless 'number' is typeof maximum
           return false if isNaN maximum

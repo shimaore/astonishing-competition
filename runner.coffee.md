@@ -21,8 +21,13 @@ Execute the ornaments
           update_counter: (name,value,expire) =>
             name = pr name
             @br.setup_counter name, expire ? default_expire()
-            @br.update_counter name, value
-          get_counter: (name) => @br.get_counter (pr name)
+            new_value = @br.update_counter name, value
+            debug 'update_counter', name, value, new_value
+            new_value
+          get_counter: (name) =>
+            value = @br.get_counter (pr name)
+            debug 'get_counter', name, value
+            value
         }
         await fun.call ctx
         debug 'Executor::run (after)', cdr
