@@ -52,6 +52,7 @@ NAME        [A-Za-z][\w-]+
 "par facture"                        return 'PER_CYCLE'
 "par période de facturation"         return 'PER_CYCLE'
 "sont gratuits"                      return 'FREE'
+"sont inclus"                        return 'FREE'
 "par appel"                          return 'PER_CALL'
 "par jour"                           return 'PER_DAY'
 "par heure"                          return 'PER_HOUR'
