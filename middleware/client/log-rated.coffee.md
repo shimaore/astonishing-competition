@@ -6,7 +6,7 @@
 
     {Executor} = require '../../runner'
     build_commands = require '../commands'
-    {get_ornaments} = require '../../get_ornaments'
+    {get_plan_fun} = require '../../get_plan_fun'
     compile = require '../../compile'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
@@ -130,12 +130,7 @@ Counters are handled at the `sub_account` level (although we could also have `ac
           private_commands = build_commands.call this
           executor = new Executor counters_prefix, private_commands, @cfg.br
 
-          plan_script = await get_ornaments PlansDB, client_cdr
-
-          if plan_script?
-            plan_fun = try compile plan_script, private_commands catch error
-            unless plan_fun?
-              debug.dev 'Invalid plan script (ignored)', error, plan_script
+          plan_fun = await get_plan_fun PlansDB, client_cdr, compile, private_commands
           plan_fun ?= ->
 
           debug 'handle_final: client', duration

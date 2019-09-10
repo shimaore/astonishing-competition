@@ -43,7 +43,54 @@
             [true,42]
         }
         await fun.call ctx
-        console.log cdr
         cdr.should.have.property 'rating_info'
         cdr.should.have.property 'integer_amount', 16
+        cdr.should.have.property 'actual_amount', 0
+
+      it 'should compile through get_plan_fun', ->
+        compile = require '../compile'
+        {get_plan_fun} = require '../get_plan_fun'
+        doc =
+          "_id": "plan:test_99"
+          "plan": "test_99"
+          "script":
+            "language": "cgu-fr"
+            "script": fs.readFileSync './test/new-cgu-knet.txt', encoding:'utf8'
+            "label": "Pas cher"
+        build_commands = require '../middleware/commands'
+        commands = build_commands.call session: rated: params: {}
+
+        cdr = new Rated
+            billable_number: '42'
+            connect_stamp: '2018-10-31T18:29:42Z'
+            remote_number: '33643482771'
+            rating_data:
+              initial:
+                duration: 30
+                cost: 10
+              subsequent:
+                duration: 1
+                cost: 1
+            per: 1
+            divider: 100
+            rating:
+              plan: 'test"99'
+              table: 'any'
+        expect fun = await get_plan_fun {get:-> await doc}, cdr, compile, commands
+        cdr.compute 67
+        console.log {cdr}
+
+        ctx = {
+          cdr
+          update_counter: (name,value,expire) ->
+            console.log 'update_counter', {name,value,expire}
+            [true,42]
+          get_counter: (name) ->
+            console.log 'get counter', name
+            [true,42]
+        }
+        await fun.call ctx
+        console.log cdr
+        cdr.should.have.property 'rating_info'
+        cdr.should.have.property 'integer_amount', 10+(67-30)
         cdr.should.have.property 'actual_amount', 0

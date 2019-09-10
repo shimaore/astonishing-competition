@@ -7,24 +7,33 @@ A billable CDR is one onto which billing rules have been applied. These rules ma
 
 Restrictions and constraints are stored alongside the billable CDRs in a `counters` record. The record may be manipulated by the aggregation code following CouchDB rules (which means 409 errors are expected and should be handled appropriately), and each update MUST reference the CDR that caused the change in the `counters` record, while each CDR MUST be updated with the content of the `counters` record. Those two last constraints allow to rebuild the entire history of the counters record, the CDRs acting as as linked list.
 
-    get_ornaments = (plans_db,cdr) ->
+    get_plan_fun = (plans_db,cdr,compile,private_commands) ->
+
+      unless cdr?.rating?.plan?
+        debug.dev 'No plan defined', cdr
+        return null
 
 Special value: the rating plan might be `false`, indicating no plan aggregation code should be loaded (but aggregation should still succeed).
 
-      if cdr?.rating?.plan is false
-        return []
+      if cdr.rating.plan is false
+        return ->
 
-Otherwise, get the list of ornaments from the billing plan.
+Otherwise, get the script from the billing plan.
 
       doc = await plans_db
         .get "plan:#{cdr.rating.plan}"
         .catch -> null
 
       unless doc?
+        debug.dev 'Unknown/unavailable plan', cdr.rating.plan
         return null
 
-      {ornaments,script} = doc
-      script ? ornaments
+      try
+        {script,ornaments} = doc
+        compile (script ? ornaments), private_commands
+      catch error
+        debug.dev 'Invalid script', doc
+        null
 
 The Aggregator is used to run the plan's actual billing code.
 
@@ -32,4 +41,5 @@ The Aggregator is used to run the plan's actual billing code.
 * doc.plan Description of a billing plan.
 * doc.plan.ornaments The [`flat-ornaments`](#pkg.flat-ornaments) implementation of the billing plan, using the commands described in the [`astonishing-competition`](#pkg.astonishing-competition) package.
 
-    module.exports = {get_ornaments}
+    module.exports = {get_plan_fun}
+    {debug} = (require 'tangible') 'astonishing-competition:get_plan_fun'

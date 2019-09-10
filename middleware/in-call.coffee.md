@@ -5,7 +5,7 @@
 
     {Executor} = require '../runner'
     build_commands = require './commands'
-    {get_ornaments} = require '../get_ornaments'
+    {get_plan_fun} = require '../get_plan_fun'
     compile = require '../compile'
     sleep = require 'marked-summer/sleep'
     sleep_until = (time) ->
@@ -78,8 +78,6 @@ Rating script
 
       debug 'Preprocessing client', client_cdr
 
-      plan_script = await get_ornaments PlansDB, client_cdr
-
 Ornaments might be set on the endpoint (client-side) to add decisions as to whether the call should proceed or not, or be interrupted at some point.
 
 * doc.endpoint.incall_script used to decide whether the call can proceed. Uses commands from astonishing-competition/commands.conditions: `at_most(maximum,counter)`, `called_mobile`, `called_fixed`, `called_fixed_or_mobile`, `called_country(countries|country)`, `called_emergency`, `called_onnet`, `up_to(total,counter)`, `free`, `hangup`.
@@ -97,10 +95,7 @@ Ornaments might be set on the endpoint (client-side) to add decisions as to whet
 
       private_commands = build_commands.call this
 
-      if plan_script?
-        plan_fun = try compile plan_script, private_commands catch error
-        unless plan_fun?
-          debug.dev 'Invalid plan script (ignored)', error, plan_script
+      plan_fun = await get_plan_fun PlansDB, client_cdr, compile, private_commands
       plan_fun ?= ->
 
       private_fun = try compile private_script, private_commands catch error
