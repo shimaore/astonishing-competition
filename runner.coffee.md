@@ -25,7 +25,8 @@ Execute the ornaments
             debug 'update_counter', name, value, new_value
             new_value
           get_counter: (name) =>
-            value = @br.get_counter (pr name)
+            name = pr name
+            value = @br.get_counter name
             debug 'get_counter', name, value
             value
         }
