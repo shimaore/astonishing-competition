@@ -51,3 +51,14 @@ Counter condition based on `incall_values`
           return false unless 'number' is typeof maximum
           return false if isNaN maximum
           value <= maximum
+
+Allow acces to various values, esp. the ones in `incall_values`.
+`if the max_amount_per_day of the endpoint …`
+
+        endpoint: ->
+          get: (what) ->
+            switch
+              when what of incall_values
+                incall_values[what]
+              else
+                null

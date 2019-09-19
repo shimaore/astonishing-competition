@@ -47,6 +47,9 @@
               true
             tag: (tag) ->
               @tag = tag
+            validate: (tag) ->
+              @validate ?= {}
+              @validate[tag] = true
 
           session:
             cdr_direction:'egress'
@@ -62,12 +65,17 @@ Client-side data
                   table: 'client+current'
                   plan: 'youpi'
               timezone: 'UTC'
+              incall_values:
+                max_amount_per_day: 30
               incall_script:
                 language: 'v2'
                 script: '''
                   increment('bear',2,'day')
                   increment_duration('cat','day')
-                  display()
+                  # display('max_amount_per_day=' + the max_amount_per_day of the endpoint)
+                  # display('it='+it)
+                  if the max_amount_per_day of the endpoint is greater than 0 and it is 30
+                    validate('it')
 
                 '''
 
@@ -197,6 +205,8 @@ Wait for cdr-report to be sent
         ctx.session.rated.client.should.have.property 'amount', 7
 
         ctx.should.have.property('tag').that.is.a.string
+        ctx.should.have.property('validate')
+        ctx.validate.should.have.property 'it', true
 
         (await ctx.cfg.br.get_counter "α unknown-account #{per} cat PER #{day}").should.have.property 1, 33
 
