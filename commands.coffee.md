@@ -25,7 +25,9 @@ This allows e.g. to have daily counters (the default) on top of "billing-period"
 
     period_name = ( period ) ->
 
-      period ?= 'YYYY-MM-DD'
+The default is `per billing cycle`.
+
+      period ?= '*'
 
 Shortcuts
 
