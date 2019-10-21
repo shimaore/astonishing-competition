@@ -69,8 +69,8 @@ Cache/memoize
       if cdr.period[period]?
         return cdr.period[period]
 
-      cdr.period[period] = Moment cdr.connect_stamp
-        .tz cdr.timezone
+      cdr.period[period] = Moment
+        .tz cdr.connect_stamp, cdr.timezone
         .format period
 
     counter_period = ( counter, cdr, period ) ->
