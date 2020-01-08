@@ -73,7 +73,7 @@ NAME        [A-Za-z][\w-]+
 "Iles Vierges (U.S.)"               yytext = 'vi'; return 'COUNTRY'
 "Nouvelle Zélande"                  yytext = 'nz'; return 'COUNTRY'
 "Pays Bas"                          yytext = 'nl'; return 'COUNTRY'
-"Royaume-Uni"                       yytext = 'uk'; return 'COUNTRY'
+"Royaume-Uni"                       yytext = 'gb'; return 'COUNTRY'
 "USA"                               yytext = 'us'; return 'COUNTRY'
 "Vatican"                           yytext = 'va'; return 'COUNTRY'
 "Vénézuéla"                         yytext = 've'; return 'COUNTRY'
