@@ -180,16 +180,19 @@ Destination conditions
       # 'fr-FR': 'vers les mobiles'
       called_mobile: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
+          data ?= @cdr.rating_data # Fallback to using the rates table
           return data?.mobile or data?.mixed
 
       # 'fr-FR': 'vers les fixes'
       called_fixed: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
+          data ?= @cdr.rating_data # Fallback to using the rates table
           return data?.fixed or data?.mixed
 
       # 'fr-FR': 'vers les fixes et les mobiles'
       called_fixed_or_mobile: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
+          data ?= @cdr.rating_data # Fallback to using the rates table
           return data?.mixed or data?.fixed or data?.mobile
 
       # 'fr-FR': 'vers {0}'
@@ -197,6 +200,7 @@ Destination conditions
           if typeof countries is 'string'
             countries = [countries]
           data = @cdr.rating_info ?= validate @cdr.remote_number
+          data ?= @cdr.rating_data # Fallback to using the rates table
           return data?.country in countries
 
 Per-call conditions
