@@ -181,18 +181,30 @@ Destination conditions
       called_mobile: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
           data ?= @cdr.rating_data # Fallback to using the rates table
+          unless data?
+            debug.dev 'called_mobile: Missing rating data', @cdr
+          else
+            debug 'called_mobile', data
           return data?.mobile or data?.mixed
 
       # 'fr-FR': 'vers les fixes'
       called_fixed: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
           data ?= @cdr.rating_data # Fallback to using the rates table
+          unless data?
+            debug.dev 'called_fixed: Missing rating data', @cdr
+          else
+            debug 'called_fixed', data
           return data?.fixed or data?.mixed
 
       # 'fr-FR': 'vers les fixes et les mobiles'
       called_fixed_or_mobile: ->
           data = @cdr.rating_info ?= validate @cdr.remote_number
           data ?= @cdr.rating_data # Fallback to using the rates table
+          unless data?
+            debug.dev 'called_fixed_or_mobile: Missing rating data', @cdr
+          else
+            debug 'called_fixed_or_mobile', data
           return data?.mixed or data?.fixed or data?.mobile
 
       # 'fr-FR': 'vers {0}'
@@ -201,7 +213,11 @@ Destination conditions
             countries = [countries]
           data = @cdr.rating_info ?= validate @cdr.remote_number
           data ?= @cdr.rating_data # Fallback to using the rates table
-          return data?.country in countries
+          unless data?
+            debug.dev 'called_country: Missing rating data', @cdr
+          else
+            debug 'called_country', data, countries
+          return data? and data.country in countries
 
 Per-call conditions
 
